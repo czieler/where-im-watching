@@ -1,1 +1,96 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+button,
+a {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:root {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  /* Primary */
+  --color-accent: #0f766e;
+  --color-accent-contrast: #ffffff;
+
+  /* Default */
+  --color-default: #475569;
+  --color-default-contrast: #ffffff;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-muted: #94a3b8;
+
+  --color-accent: #2dd4bf;
+  --color-accent-hover: #5eead4;
+  --color-accent-contrast: #042f2e;
+
+  --color-border: #334155;
+}
+
+/* Base button */
+.btn {
+  cursor: pointer;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding: 0.25rem 1rem;
+  font-weight: 600;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Primary / theme accent button */
+.btn-primary {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background-color: transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+  color: var(--color-accent-contrast);
+  background-color: var(--color-accent);
+}
+
+/* Default / neutral button */
+.btn-default {
+  color: var(--color-default);
+  border-color: var(--color-default);
+  background-color: transparent;
+}
+
+.btn-default:hover:not(:disabled) {
+  color: var(--color-default-contrast);
+  background-color: var(--color-default);
+}
+
+a {
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

@@ -6,15 +6,22 @@ type Show = {
 type ShowListProps = {
   title: string;
   shows: Show[];
+  onAdd: () => void;
 };
 
-function ShowList({ title, shows }: ShowListProps) {
+function ShowList({ title, shows, onAdd }: ShowListProps) {
   return (
     <section className="mt-8">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-lg font-bold">{title}</h3>
 
-        <button className="font-semibold text-blue-600">See all</button>
+        <div className="flex items-center gap-6">
+          <button onClick={onAdd} className="btn btn-primary">
+            + Add
+          </button>
+
+          <a href="#">See all</a>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

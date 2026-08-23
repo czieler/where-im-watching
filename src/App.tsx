@@ -4,10 +4,10 @@ import StatCard from "./components/StatCard";
 import ShowList from "./components/ShowList";
 
 const stats = [
-  { label: "Watching", count: 12, color: "text-blue-600" },
-  { label: "Want to Watch", count: 8, color: "text-emerald-600" },
-  { label: "Completed", count: 24, color: "text-violet-600" },
-  { label: "On Hold", count: 5, color: "text-orange-500" },
+  { label: "Watching", count: 12, color: "text-teal-600" },
+  { label: "Want to Watch", count: 8, color: "text-slate-600" },
+  { label: "Completed", count: 24, color: "text-slate-600" },
+  { label: "On Hold", count: 5, color: "text-slate-500" },
 ];
 
 function App() {
@@ -40,7 +40,7 @@ function App() {
         <nav className="flex flex-1 flex-col gap-2 p-4">
           <a
             href="#"
-            className="rounded-lg bg-blue-50 px-4 py-3 font-medium text-blue-600"
+            className="rounded-lg bg-teal-50 px-4 py-3 font-medium text-teal-600"
           >
             Overview
           </a>
@@ -102,21 +102,29 @@ function App() {
             ))}
           </section>
 
-          <ShowList title="Currently Watching" shows={watching} />
-          <ShowList title="Currently Watching" shows={wantToWatch} />
+          <ShowList
+            title="Currently Watching"
+            shows={watching}
+            onAdd={() => console.log("Add to Watching")}
+          />
+          <ShowList
+            title="Currently Watching"
+            shows={wantToWatch}
+            onAdd={() => console.log("Add to Want to Watch")}
+          />
         </main>
 
         {/* Mobile bottom navigation */}
         <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white md:hidden">
           <div className="grid grid-cols-5 items-center">
-            <button className="py-4 text-sm font-semibold text-blue-600">
+            <button className="py-4 text-sm font-semibold text-teal-600">
               Home
             </button>
 
             <button className="py-4 text-sm text-slate-600">My List</button>
 
             <button
-              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-2xl text-white"
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-2xl text-white"
               aria-label="Add show"
             >
               +
