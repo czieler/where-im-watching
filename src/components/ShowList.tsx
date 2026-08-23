@@ -15,7 +15,7 @@ type ShowListProps = {
 function ShowList({ title, shows, onAdd }: ShowListProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   return (
-    <section className="mb-10 mt-8">
+    <section className="mb-10">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div
           onClick={() => setIsExpanded(!isExpanded)}

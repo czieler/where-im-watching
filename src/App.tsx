@@ -1,18 +1,14 @@
 import { useState } from "react";
 import wiwLogo from "./assets/wiw_logo.png";
-import StatCard from "./components/StatCard";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
-import { getStatColor } from "./utils/styleUtils";
-
-const stats = [
-  { label: "Watching", count: 2, variant: "primary" },
-  { label: "Want to Watch", count: 3, variant: "default" },
-  { label: "Completed", count: 24, variant: "default" },
-  { label: "On Hold", count: 5, variant: "muted" },
-];
+import { List, Layers, User, Palette, Menu, X, Plus } from "lucide-react";
 
 function App() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
@@ -33,98 +29,126 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white md:flex md:flex-col">
-        <div className="border-b border-slate-200 px-6 py-6">
+      <aside
+        className={`fixed inset-y-0 left-0 hidden border-r border-slate-200 bg-white transition-all duration-200 md:flex md:flex-col ${
+          isSidebarCollapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <div className="border-b border-slate-200 px-4 py-6">
           <div className="flex items-center gap-3">
             <img
               src={wiwLogo}
               alt="Where I'm Watching"
-              className="h-12 w-12 object-contain"
+              className="h-12 w-12 shrink-0 object-contain"
             />
-            <h1 className="text-xl font-bold">Where I'm Watching</h1>
+
+            {!isSidebarCollapsed && (
+              <h1 className="text-xl font-bold">Where I'm Watching</h1>
+            )}
           </div>
         </div>
 
         <nav className="flex flex-1 flex-col gap-2 p-4">
           <a
             href="#"
-            className="rounded-lg bg-teal-50 px-4 py-3 font-medium text-teal-600"
+            className="flex items-center gap-3 rounded-lg bg-teal-50 px-4 py-3 font-medium text-teal-600"
+            title={isSidebarCollapsed ? "My List" : undefined}
           >
-            Overview
+            <List className="h-5 w-5 shrink-0" />
+
+            {!isSidebarCollapsed && <span>My List</span>}
           </a>
 
           <a
             href="#"
-            className="rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
+            className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
+            title={isSidebarCollapsed ? "Services" : undefined}
           >
-            My List
+            <Layers className="h-5 w-5 shrink-0" />
+
+            {!isSidebarCollapsed && <span>Services</span>}
           </a>
 
-          <a
-            href="#"
-            className="rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
-          >
-            Search
-          </a>
-
-          <a
-            href="#"
-            className="rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
-          >
-            Account
-          </a>
-
-          <div className="mt-auto px-6 py-6">
-            <label htmlFor="theme" className="mb-2 block text-sm font-semibold">
-              Theme
-            </label>
-
-            <select
-              id="theme"
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          <div className="mt-auto">
+            <a
+              href="#"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
+              title={isSidebarCollapsed ? "Account" : undefined}
             >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="blues">Blues</option>
-            </select>
+              <User className="h-5 w-5 shrink-0" />
+
+              {!isSidebarCollapsed && <span>Account</span>}
+            </a>
+
+            <div className="px-4 py-4">
+              {isSidebarCollapsed ? (
+                <button
+                  className="flex w-full items-center justify-center text-slate-600"
+                  title="Theme"
+                  aria-label="Theme"
+                >
+                  <Palette className="h-5 w-5" />
+                </button>
+              ) : (
+                <>
+                  <label
+                    htmlFor="theme"
+                    className="mb-2 block text-sm font-semibold"
+                  >
+                    Theme
+                  </label>
+
+                  <select
+                    id="theme"
+                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="blues">Blues</option>
+                  </select>
+                </>
+              )}
+            </div>
           </div>
         </nav>
+
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute top-1/2 -right-4 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+          aria-label={
+            isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+          }
+        >
+          {isSidebarCollapsed ? "›" : "‹"}
+        </button>
       </aside>
 
       {/* Everything to the right of the sidebar on desktop */}
-      <div className="md:pl-64">
+      <div
+        className={`transition-all duration-200 ${
+          isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
+        }`}
+      >
         {/* Top bar */}
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-4">
               {/* Mobile menu button */}
-              <button className="text-2xl md:hidden" aria-label="Open menu">
-                ☰
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="text-2xl md:hidden"
+                aria-label="Open menu"
+              >
+                <Menu size={24} />
               </button>
 
-              <h2 className="text-xl font-bold">Overview</h2>
+              <h2 className="text-xl font-bold">My List</h2>
             </div>
-
-            <button className="text-xl" aria-label="Notifications">
-              🔔
-            </button>
           </div>
         </header>
 
         {/* Main content */}
-        <main className="mx-auto max-w-5xl px-4 py-6 pb-28 sm:px-6 md:pb-8">
-          {/* Stats */}
-          <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <StatCard
-                key={stat.label}
-                label={stat.label}
-                count={stat.count}
-                color={getStatColor(stat.variant)}
-              />
-            ))}
-          </section>
-
+        <main className="mx-auto max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
           <ShowList
             title="Currently Watching"
             shows={watching}
@@ -145,26 +169,69 @@ function App() {
 
         {/* Mobile bottom navigation */}
         <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white md:hidden">
-          <div className="grid grid-cols-5 items-center">
-            <button className="py-4 text-sm font-semibold text-teal-600">
-              Home
+          <div className="grid grid-cols-3 items-center">
+            <button className="flex flex-col items-center gap-1 py-3 font-semibold text-teal-600">
+              <List size={22} />
+              <span className="text-xs">My List</span>
             </button>
-
-            <button className="py-4 text-sm text-slate-600">My List</button>
 
             <button
-              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-2xl text-white"
+              onClick={() => setIsAddOpen(true)}
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white"
               aria-label="Add show"
             >
-              +
+              <Plus size={24} />
             </button>
 
-            <button className="py-4 text-sm text-slate-600">Search</button>
-
-            <button className="py-4 text-sm text-slate-600">Account</button>
+            <button className="flex flex-col items-center gap-1 py-3 text-slate-600">
+              <Layers size={22} />
+              <span className="text-xs">Services</span>
+            </button>
           </div>
         </nav>
       </div>
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          <aside className="absolute left-0 top-0 h-full w-72 bg-white p-6 shadow-lg">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Settings</h2>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <a
+              href="#"
+              className="mb-6 flex items-center gap-3 rounded-lg  font-medium text-slate-600 hover:bg-slate-100"
+            >
+              <User className="h-5 w-5" />
+              <span>Account</span>
+            </a>
+
+            <label htmlFor="mobile-theme" className="mb-2 block font-semibold">
+              Theme
+            </label>
+
+            <select
+              id="mobile-theme"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="blues">Blues</option>
+            </select>
+          </aside>
+        </div>
+      )}
       {isAddOpen && <AddShowModal onClose={() => setIsAddOpen(false)} />}
     </div>
   );
