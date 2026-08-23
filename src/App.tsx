@@ -2,15 +2,23 @@ import { useState } from "react";
 import wiwLogo from "./assets/wiw_logo.png";
 import StatCard from "./components/StatCard";
 import ShowList from "./components/ShowList";
+import AddShowModal from "./components/AddShowModal";
+import { getStatColor } from "./utils/styleUtils";
 
 const stats = [
-  { label: "Watching", count: 12, color: "text-teal-600" },
-  { label: "Want to Watch", count: 8, color: "text-slate-600" },
-  { label: "Completed", count: 24, color: "text-slate-600" },
-  { label: "On Hold", count: 5, color: "text-slate-500" },
+  { label: "Watching", count: 2, variant: "primary" },
+  { label: "Want to Watch", count: 3, variant: "default" },
+  { label: "Completed", count: 24, variant: "default" },
+  { label: "On Hold", count: 5, variant: "muted" },
 ];
 
 function App() {
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
+    "watching",
+  );
+
   const [watching, setWatching] = useState([
     { title: "The Last of Us", service: "Hulu" },
     { title: "Slow Horses", service: "Apple TV+" },
@@ -65,6 +73,21 @@ function App() {
           >
             Account
           </a>
+
+          <div className="mt-auto px-6 py-6">
+            <label htmlFor="theme" className="mb-2 block text-sm font-semibold">
+              Theme
+            </label>
+
+            <select
+              id="theme"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="blues">Blues</option>
+            </select>
+          </div>
         </nav>
       </aside>
 
@@ -97,7 +120,7 @@ function App() {
                 key={stat.label}
                 label={stat.label}
                 count={stat.count}
-                color={stat.color}
+                color={getStatColor(stat.variant)}
               />
             ))}
           </section>
@@ -105,12 +128,18 @@ function App() {
           <ShowList
             title="Currently Watching"
             shows={watching}
-            onAdd={() => console.log("Add to Watching")}
+            onAdd={() => {
+              setAddTarget("watching");
+              setIsAddOpen(true);
+            }}
           />
           <ShowList
-            title="Currently Watching"
+            title="Want to Watch"
             shows={wantToWatch}
-            onAdd={() => console.log("Add to Want to Watch")}
+            onAdd={() => {
+              setAddTarget("wantToWatch");
+              setIsAddOpen(true);
+            }}
           />
         </main>
 
@@ -136,6 +165,7 @@ function App() {
           </div>
         </nav>
       </div>
+      {isAddOpen && <AddShowModal onClose={() => setIsAddOpen(false)} />}
     </div>
   );
 }
