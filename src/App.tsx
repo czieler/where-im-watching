@@ -2,7 +2,17 @@ import { useState } from "react";
 import wiwLogo from "./assets/wiw_logo.png";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
-import { List, Layers, User, Palette, Menu, X, Plus } from "lucide-react";
+import {
+  List,
+  Layers,
+  User,
+  Palette,
+  Menu,
+  X,
+  Plus,
+  Search,
+  ChevronDown,
+} from "lucide-react";
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,6 +20,12 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const [searchText, setSearchText] = useState("");
+
+  const [selectedService, setSelectedService] = useState("all");
+
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
     "watching",
@@ -25,6 +41,39 @@ function App() {
     { title: "Ted Lasso", service: "Apple TV+" },
     { title: "Only Murders in the Building", service: "Hulu" },
   ]);
+
+  const [completed, setCompleted] = useState([
+    { title: "Breaking Bad", service: "Netflix" },
+    { title: "The Good Place", service: "Netflix" },
+  ]);
+
+  const [onHold, setOnHold] = useState([
+    { title: "Yellowjackets", service: "Paramount+" },
+  ]);
+
+  const filteredWatching = watching.filter(
+    (show) =>
+      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
+      (selectedService === "all" || show.service === selectedService),
+  );
+
+  const filteredWantToWatch = wantToWatch.filter(
+    (show) =>
+      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
+      (selectedService === "all" || show.service === selectedService),
+  );
+
+  const filteredCompleted = completed.filter(
+    (show) =>
+      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
+      (selectedService === "all" || show.service === selectedService),
+  );
+
+  const filteredOnHold = onHold.filter(
+    (show) =>
+      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
+      (selectedService === "all" || show.service === selectedService),
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -98,14 +147,20 @@ function App() {
                     Theme
                   </label>
 
-                  <select
-                    id="theme"
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="blues">Blues</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="theme"
+                      className="w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+                    >
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                      <option value="blues">Blues</option>
+                    </select>
+                    <ChevronDown
+                      size={16}
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                  </div>
                 </>
               )}
             </div>
@@ -149,22 +204,99 @@ function App() {
 
         {/* Main content */}
         <main className="mx-auto max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
-          <ShowList
-            title="Currently Watching"
-            shows={watching}
-            onAdd={() => {
-              setAddTarget("watching");
-              setIsAddOpen(true);
-            }}
-          />
-          <ShowList
-            title="Want to Watch"
-            shows={wantToWatch}
-            onAdd={() => {
-              setAddTarget("wantToWatch");
-              setIsAddOpen(true);
-            }}
-          />
+          <div className="mb-6 flex flex-col gap-3 lg:flex-row">
+            <div className="relative flex-1">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Search my list..."
+                className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+
+            <div className="relative">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-44 appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5"
+              >
+                <option value="all">All Statuses</option>
+                <option value="watching">Watching</option>
+                <option value="wantToWatch">Want to Watch</option>
+                <option value="completed">Completed</option>
+                <option value="onHold">On Hold</option>
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              />
+            </div>
+
+            <div className="relative">
+              <select
+                value={selectedService}
+                onChange={(e) => setSelectedService(e.target.value)}
+                className="w-44 appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5"
+              >
+                <option value="all">All Services</option>
+                <option value="Hulu">Hulu</option>
+                <option value="Netflix">Netflix</option>
+                <option value="Paramount+">Paramount+</option>
+                <option value="Apple TV+">Apple TV+</option>
+                <option value="Max">Max</option>
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              />
+            </div>
+          </div>
+          {(selectedStatus === "all" || selectedStatus === "watching") && (
+            <ShowList
+              title="Currently Watching"
+              shows={filteredWatching}
+              onAdd={() => {
+                setAddTarget("watching");
+                setIsAddOpen(true);
+              }}
+            />
+          )}
+          {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
+            <ShowList
+              title="Want to Watch"
+              shows={filteredWantToWatch}
+              onAdd={() => {
+                setAddTarget("wantToWatch");
+                setIsAddOpen(true);
+              }}
+            />
+          )}
+          {(selectedStatus === "all" || selectedStatus === "completed") && (
+            <ShowList
+              title="Completed"
+              shows={filteredCompleted}
+              onAdd={() => {
+                console.log("Add to Completed");
+              }}
+              defaultExpanded={false}
+            />
+          )}
+          {(selectedStatus === "all" || selectedStatus === "onHold") && (
+            <ShowList
+              title="On Hold"
+              shows={filteredOnHold}
+              onAdd={() => {
+                console.log("Add to On Hold");
+              }}
+              defaultExpanded={false}
+            />
+          )}
         </main>
 
         {/* Mobile bottom navigation */}
@@ -221,14 +353,20 @@ function App() {
               Theme
             </label>
 
-            <select
-              id="mobile-theme"
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="blues">Blues</option>
-            </select>
+            <div className="relative">
+              <select
+                id="mobile-theme"
+                className="w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+              >
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="blues">Blues</option>
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              />
+            </div>
           </aside>
         </div>
       )}

@@ -10,10 +10,16 @@ type ShowListProps = {
   title: string;
   shows: Show[];
   onAdd: () => void;
+  defaultExpanded?: boolean;
 };
 
-function ShowList({ title, shows, onAdd }: ShowListProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function ShowList({
+  title,
+  shows,
+  onAdd,
+  defaultExpanded = true,
+}: ShowListProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   return (
     <section className="mb-10">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
