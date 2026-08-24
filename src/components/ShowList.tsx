@@ -20,17 +20,18 @@ function ShowList({
   defaultExpanded = true,
 }: ShowListProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
   return (
     <section className="mb-10">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="show-list overflow-hidden rounded-xl border shadow-sm">
         <div
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex cursor-pointer items-center justify-between bg-[var(--color-accent)] px-5 py-3 text-white"
+          className="show-list-header flex cursor-pointer items-center justify-between px-5 py-3"
         >
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold">{title}</h3>
 
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-sm font-semibold">
+            <span className="show-count rounded-full px-2 py-0.5 text-sm font-semibold">
               {shows.length}
             </span>
           </div>
@@ -42,11 +43,11 @@ function ShowList({
           shows.map((show) => (
             <div
               key={show.title}
-              className="flex items-center justify-between border-b border-slate-200 px-5 py-4 last:border-b-0"
+              className="show-list-row flex items-center justify-between border-b px-5 py-4 last:border-b-0"
             >
               <span className="font-semibold">{show.title}</span>
 
-              <span className="text-sm font-medium text-slate-500">
+              <span className="show-service text-sm font-medium">
                 {show.service}
               </span>
             </div>

@@ -1,0 +1,328 @@
+/* ==========================================================
+   WHERE I'M WATCHING - THEMES
+   ========================================================== */
+
+/* ==========================================================
+   THEME DEFINITIONS
+   ========================================================== */
+
+[data-theme="light"] {
+  --theme-bg: #ffffff;
+  --theme-surface: #ffffff;
+  --theme-surface-alt: #f8fafc;
+
+  --theme-text: #1f2937;
+  --theme-text-muted: #6b7280;
+
+  --theme-border: #e5e7eb;
+
+  --theme-input-bg: #ffffff;
+  --theme-input-text: #1f2937;
+
+  --theme-hover: #f3f4f6;
+
+  /* Accent */
+  --theme-accent: #0f766e;
+  --theme-accent-hover: #115e59;
+  --theme-accent-soft: #ccfbf1;
+  --theme-accent-text: #ffffff;
+
+  --theme-overlay: rgb(0 0 0 / 40%);
+}
+
+[data-theme="dark"] {
+  --theme-bg: #111827;
+  --theme-surface: #1f2937;
+  --theme-surface-alt: #182234;
+
+  --theme-text: #f9fafb;
+  --theme-text-muted: #9ca3af;
+
+  --theme-border: #374151;
+
+  --theme-input-bg: #273548;
+  --theme-input-text: #f9fafb;
+
+  --theme-hover: #2d3a4d;
+
+  /* Accent */
+  --theme-accent: #14b8a6;
+  --theme-accent-hover: #2dd4bf;
+  --theme-accent-soft: #134e4a;
+  --theme-accent-text: #062c2a;
+
+  --theme-overlay: rgb(0 0 0 / 60%);
+}
+
+[data-theme="blues"] {
+  --theme-bg: #eef6ff;
+  --theme-surface: #ffffff;
+  --theme-surface-alt: #dbeafe;
+
+  --theme-text: #16324f;
+  --theme-text-muted: #5c7185;
+
+  --theme-border: #bfdbfe;
+
+  --theme-input-bg: #ffffff;
+  --theme-input-text: #16324f;
+
+  --theme-hover: #e0edff;
+
+  /* Accent */
+  --theme-accent: #2563eb;
+  --theme-accent-hover: #1d4ed8;
+  --theme-accent-soft: #dbeafe;
+  --theme-accent-text: #ffffff;
+
+  --theme-overlay: rgb(15 23 42 / 45%);
+}
+
+/* ==========================================================
+   GLOBAL THEME STYLES
+   ========================================================== */
+
+[data-theme] {
+  min-height: 100vh;
+
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  /* ========================================================
+     GENERAL TEXT
+     ======================================================== */
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--theme-text);
+  }
+
+  p {
+    color: inherit;
+  }
+
+  /* ========================================================
+     APP BACKGROUND
+     ======================================================== */
+
+  &.app {
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+  }
+
+  /* ========================================================
+     SIDEBAR
+     ======================================================== */
+
+  .app-sidebar {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+  }
+
+  .app-sidebar-header {
+    border-color: var(--theme-border);
+  }
+
+  .sidebar-toggle {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+
+    &:hover {
+      background-color: var(--theme-hover);
+    }
+  }
+
+  /* ========================================================
+     NAVIGATION
+     ======================================================== */
+
+  .nav-item {
+    color: var(--theme-text-muted);
+
+    &:hover {
+      background-color: var(--theme-hover);
+      color: var(--theme-text);
+    }
+  }
+
+  .nav-item-active {
+    background-color: var(--theme-accent-soft);
+    color: var(--theme-accent);
+
+    &:hover {
+      background-color: var(--theme-accent-soft);
+      color: var(--theme-accent);
+    }
+  }
+
+  /* ========================================================
+     HEADER
+     ======================================================== */
+
+  .app-header {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+    opacity: 1;
+  }
+
+  /* ========================================================
+     INPUTS / SELECTS
+     ======================================================== */
+
+  .app-input,
+  .app-select,
+  .theme-select,
+  input,
+  select,
+  textarea {
+    background-color: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    border-color: var(--theme-border);
+
+    &::placeholder {
+      color: var(--theme-text-muted);
+    }
+
+    &:focus {
+      border-color: var(--theme-accent);
+      outline-color: var(--theme-accent);
+    }
+  }
+
+  option {
+    background-color: var(--theme-input-bg);
+    color: var(--theme-input-text);
+  }
+
+  .select-chevron,
+  .search-icon {
+    color: var(--theme-text-muted);
+  }
+
+  /* ========================================================
+     SHOW LIST
+     ======================================================== */
+
+  .show-list {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+  }
+
+  .show-list-header {
+    background-color: var(--theme-accent);
+    color: var(--theme-accent-text);
+
+    h3 {
+      color: var(--theme-accent-text);
+    }
+
+    svg {
+      color: var(--theme-accent-text);
+    }
+  }
+
+  .show-count {
+    background-color: rgb(255 255 255 / 20%);
+    color: var(--theme-accent-text);
+  }
+
+  .show-list-row {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+
+    &:hover {
+      background-color: var(--theme-hover);
+    }
+  }
+
+  .show-service {
+    color: var(--theme-text-muted);
+  }
+
+  /* ========================================================
+     BUTTONS
+     ======================================================== */
+
+  .btn-primary {
+    background-color: var(--theme-accent);
+    color: var(--theme-accent-text);
+    border-color: var(--theme-accent);
+
+    &:hover {
+      background-color: var(--theme-accent-hover);
+      border-color: var(--theme-accent-hover);
+    }
+  }
+
+  .btn-default {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+
+    &:hover {
+      background-color: var(--theme-hover);
+    }
+  }
+
+  /* ========================================================
+     MOBILE BOTTOM NAVIGATION
+     ======================================================== */
+
+  .mobile-bottom-nav {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+  }
+
+  .mobile-nav-active {
+    color: var(--theme-accent);
+  }
+
+  /* ========================================================
+     MOBILE MENU
+     ======================================================== */
+
+  .mobile-menu-overlay {
+    background-color: var(--theme-overlay);
+  }
+
+  .mobile-menu {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+  }
+
+  /* ========================================================
+     MODAL
+     ======================================================== */
+
+  .modal-overlay {
+    background-color: var(--theme-overlay);
+  }
+
+  .modal {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+  }
+
+  /* ========================================================
+     ICONS
+     ======================================================== */
+
+  svg {
+    color: inherit;
+  }
+}

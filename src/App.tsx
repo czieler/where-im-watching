@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
@@ -15,16 +16,24 @@ import {
 } from "lucide-react";
 
 function App() {
+  type Theme = "light" | "dark" | "blues";
+
+  const [theme, setTheme] = useState<Theme>(() => {
+    const savedTheme = localStorage.getItem("theme") as Theme | null;
+
+    return savedTheme ?? "light";
+  });
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
   const [isAddOpen, setIsAddOpen] = useState(false);
-
   const [searchText, setSearchText] = useState("");
-
   const [selectedService, setSelectedService] = useState("all");
-
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
@@ -76,14 +85,14 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="app" data-theme={theme}>
       {/* Desktop sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 hidden border-r border-slate-200 bg-white transition-all duration-200 md:flex md:flex-col ${
+        className={`app-sidebar fixed inset-y-0 left-0 hidden border-r transition-all duration-200 md:flex md:flex-col ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className="border-b border-slate-200 px-4 py-6">
+        <div className="app-sidebar-header border-b px-4 py-6">
           <div className="flex items-center gap-3">
             <img
               src={wiwLogo}
@@ -100,39 +109,36 @@ function App() {
         <nav className="flex flex-1 flex-col gap-2 p-4">
           <a
             href="#"
-            className="flex items-center gap-3 rounded-lg bg-teal-50 px-4 py-3 font-medium text-teal-600"
+            className="nav-item nav-item-active flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
             title={isSidebarCollapsed ? "My List" : undefined}
           >
             <List className="h-5 w-5 shrink-0" />
-
             {!isSidebarCollapsed && <span>My List</span>}
           </a>
 
           <a
             href="#"
-            className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
+            className="nav-item flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
             title={isSidebarCollapsed ? "Services" : undefined}
           >
             <Layers className="h-5 w-5 shrink-0" />
-
             {!isSidebarCollapsed && <span>Services</span>}
           </a>
 
           <div className="mt-auto">
             <a
               href="#"
-              className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-slate-600 hover:bg-slate-100"
+              className="nav-item flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
               title={isSidebarCollapsed ? "Account" : undefined}
             >
               <User className="h-5 w-5 shrink-0" />
-
               {!isSidebarCollapsed && <span>Account</span>}
             </a>
 
             <div className="px-4 py-4">
               {isSidebarCollapsed ? (
                 <button
-                  className="flex w-full items-center justify-center text-slate-600"
+                  className="nav-item flex w-full items-center justify-center"
                   title="Theme"
                   aria-label="Theme"
                 >
@@ -149,16 +155,21 @@ function App() {
 
                   <div className="relative">
                     <select
+                      value={theme}
+                      onChange={(e) =>
+                        handleThemeChange(e.target.value as Theme)
+                      }
                       id="theme"
-                      className="w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+                      className="theme-select w-full appearance-none rounded-lg border px-3 py-2"
                     >
                       <option value="light">Light</option>
                       <option value="dark">Dark</option>
                       <option value="blues">Blues</option>
                     </select>
+
                     <ChevronDown
                       size={16}
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                      className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
                     />
                   </div>
                 </>
@@ -169,7 +180,7 @@ function App() {
 
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute top-1/2 -right-4 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+          className="sidebar-toggle absolute top-1/2 -right-4 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm"
           aria-label={
             isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
           }
@@ -185,10 +196,9 @@ function App() {
         }`}
       >
         {/* Top bar */}
-        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
+        <header className="app-header sticky top-0 z-10 border-b">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-4">
-              {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="text-2xl md:hidden"
@@ -208,7 +218,7 @@ function App() {
             <div className="relative flex-1">
               <Search
                 size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="search-icon absolute left-3 top-1/2 -translate-y-1/2"
               />
 
               <input
@@ -216,7 +226,7 @@ function App() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="Search my list..."
-                className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 outline-none focus:border-[var(--color-accent)]"
+                className="app-input w-full rounded-lg border py-2.5 pl-10 pr-4 outline-none"
               />
             </div>
 
@@ -224,7 +234,7 @@ function App() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-44 appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5"
+                className="app-select w-44 appearance-none rounded-lg border px-4 py-2.5"
               >
                 <option value="all">All Statuses</option>
                 <option value="watching">Watching</option>
@@ -232,9 +242,10 @@ function App() {
                 <option value="completed">Completed</option>
                 <option value="onHold">On Hold</option>
               </select>
+
               <ChevronDown
                 size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
               />
             </div>
 
@@ -242,7 +253,7 @@ function App() {
               <select
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
-                className="w-44 appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5"
+                className="app-select w-44 appearance-none rounded-lg border px-4 py-2.5"
               >
                 <option value="all">All Services</option>
                 <option value="Hulu">Hulu</option>
@@ -251,12 +262,14 @@ function App() {
                 <option value="Apple TV+">Apple TV+</option>
                 <option value="Max">Max</option>
               </select>
+
               <ChevronDown
                 size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
               />
             </div>
           </div>
+
           {(selectedStatus === "all" || selectedStatus === "watching") && (
             <ShowList
               title="Currently Watching"
@@ -267,6 +280,7 @@ function App() {
               }}
             />
           )}
+
           {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
             <ShowList
               title="Want to Watch"
@@ -277,6 +291,7 @@ function App() {
               }}
             />
           )}
+
           {(selectedStatus === "all" || selectedStatus === "completed") && (
             <ShowList
               title="Completed"
@@ -287,6 +302,7 @@ function App() {
               defaultExpanded={false}
             />
           )}
+
           {(selectedStatus === "all" || selectedStatus === "onHold") && (
             <ShowList
               title="On Hold"
@@ -300,36 +316,38 @@ function App() {
         </main>
 
         {/* Mobile bottom navigation */}
-        <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white md:hidden">
+        <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 border-t md:hidden">
           <div className="grid grid-cols-3 items-center">
-            <button className="flex flex-col items-center gap-1 py-3 font-semibold text-teal-600">
+            <button className="mobile-nav-active flex flex-col items-center gap-1 py-3 font-semibold">
               <List size={22} />
               <span className="text-xs">My List</span>
             </button>
 
             <button
               onClick={() => setIsAddOpen(true)}
-              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white"
+              className="btn-primary mx-auto flex h-12 w-12 items-center justify-center rounded-full"
               aria-label="Add show"
             >
               <Plus size={24} />
             </button>
 
-            <button className="flex flex-col items-center gap-1 py-3 text-slate-600">
+            <button className="nav-item flex flex-col items-center gap-1 py-3">
               <Layers size={22} />
               <span className="text-xs">Services</span>
             </button>
           </div>
         </nav>
       </div>
+
+      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="mobile-menu-overlay absolute inset-0"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          <aside className="absolute left-0 top-0 h-full w-72 bg-white p-6 shadow-lg">
+          <aside className="mobile-menu absolute left-0 top-0 h-full w-72 p-6 shadow-lg">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-bold">Settings</h2>
 
@@ -343,7 +361,7 @@ function App() {
 
             <a
               href="#"
-              className="mb-6 flex items-center gap-3 rounded-lg  font-medium text-slate-600 hover:bg-slate-100"
+              className="nav-item mb-6 flex items-center gap-3 rounded-lg font-medium"
             >
               <User className="h-5 w-5" />
               <span>Account</span>
@@ -355,21 +373,25 @@ function App() {
 
             <div className="relative">
               <select
+                value={theme}
+                onChange={(e) => handleThemeChange(e.target.value as Theme)}
                 id="mobile-theme"
-                className="w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+                className="theme-select w-full appearance-none rounded-lg border px-3 py-2"
               >
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
                 <option value="blues">Blues</option>
               </select>
+
               <ChevronDown
                 size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
               />
             </div>
           </aside>
         </div>
       )}
+
       {isAddOpen && <AddShowModal onClose={() => setIsAddOpen(false)} />}
     </div>
   );
