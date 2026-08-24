@@ -179,7 +179,13 @@
   /* ========================================================
      INPUTS / SELECTS
      ======================================================== */
+  .search-clear {
+    color: var(--theme-text-muted);
 
+    &:hover {
+      color: var(--theme-text);
+    }
+  }
   .app-input,
   .app-select,
   .theme-select,
@@ -214,6 +220,13 @@
      SHOW LIST
      ======================================================== */
 
+  .empty-state {
+    color: var(--theme-text-muted);
+
+    p {
+      color: inherit;
+    }
+  }
   .show-list {
     background-color: var(--theme-surface);
     color: var(--theme-text);
@@ -277,6 +290,33 @@
     }
   }
 
+  /* ========================================================
+     THEME MINI MENU
+     ======================================================== */
+  .theme-mini-menu {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+
+    .theme-mini-menu-item {
+      display: block;
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+      color: var(--theme-text);
+      background-color: transparent;
+
+      &:hover {
+        background-color: var(--theme-hover);
+      }
+
+      &.selected {
+        background-color: var(--theme-accent-soft);
+        color: var(--theme-accent);
+        font-weight: 600;
+      }
+    }
+  }
   /* ========================================================
      MOBILE BOTTOM NAVIGATION
      ======================================================== */

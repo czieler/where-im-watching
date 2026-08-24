@@ -39,19 +39,31 @@ function ShowList({
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
 
-        {isExpanded &&
-          shows.map((show) => (
-            <div
-              key={show.title}
-              className="show-list-row flex items-center justify-between border-b px-5 py-4 last:border-b-0"
-            >
-              <span className="font-semibold">{show.title}</span>
+        {isExpanded && (
+          <>
+            {shows.length > 0 ? (
+              shows.map((show) => (
+                <div
+                  key={show.title}
+                  className="show-list-row flex items-center justify-between border-b px-5 py-4 last:border-b-0"
+                >
+                  <span className="font-semibold">{show.title}</span>
 
-              <span className="show-service text-sm font-medium">
-                {show.service}
-              </span>
-            </div>
-          ))}
+                  <span className="show-service text-sm font-medium">
+                    {show.service}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state px-5 py-8 text-center">
+                <p className="font-semibold">No shows found</p>
+                <p className="mt-1 text-sm">
+                  Try changing your search or filters.
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className="mt-3 flex justify-end">

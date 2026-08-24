@@ -18,16 +18,13 @@ import {
 function App() {
   type Theme = "light" | "dark" | "blues";
 
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
 
     return savedTheme ?? "light";
   });
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-  };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -35,6 +32,17 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  const clearFilters = () => {
+    setSearchText("");
+    setSelectedStatus("all");
+    setSelectedService("all");
+  };
 
   const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
     "watching",
@@ -137,13 +145,57 @@ function App() {
 
             <div className="px-4 py-4">
               {isSidebarCollapsed ? (
-                <button
-                  className="nav-item flex w-full items-center justify-center"
-                  title="Theme"
-                  aria-label="Theme"
-                >
-                  <Palette className="h-5 w-5" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+                    className="nav-item flex w-full items-center justify-center"
+                    title="Theme"
+                    aria-label="Theme"
+                    aria-expanded={isThemeMenuOpen}
+                  >
+                    <Palette className="h-5 w-5" />
+                  </button>
+
+                  {isThemeMenuOpen && (
+                    <div className="theme-mini-menu absolute bottom-0 left-full z-50 ml-4 w-36 overflow-hidden rounded-lg border shadow-lg">
+                      <button
+                        onClick={() => {
+                          handleThemeChange("light");
+                          setIsThemeMenuOpen(false);
+                        }}
+                        className={`theme-mini-menu-item ${
+                          theme === "light" ? "selected" : ""
+                        }`}
+                      >
+                        Light
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleThemeChange("dark");
+                          setIsThemeMenuOpen(false);
+                        }}
+                        className={`theme-mini-menu-item ${
+                          theme === "dark" ? "selected" : ""
+                        }`}
+                      >
+                        Dark
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleThemeChange("blues");
+                          setIsThemeMenuOpen(false);
+                        }}
+                        className={`theme-mini-menu-item ${
+                          theme === "blues" ? "selected" : ""
+                        }`}
+                      >
+                        Blues
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <label
@@ -196,7 +248,7 @@ function App() {
         }`}
       >
         {/* Top bar */}
-        <header className="app-header sticky top-0 z-10 border-b">
+        <header className="app-header sticky top-0 z-30 border-b">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-4">
               <button
@@ -228,6 +280,17 @@ function App() {
                 placeholder="Search my list..."
                 className="app-input w-full rounded-lg border py-2.5 pl-10 pr-4 outline-none"
               />
+
+              {searchText && (
+                <button
+                  type="button"
+                  onClick={() => setSearchText("")}
+                  className="search-clear absolute right-3 top-1/2 -translate-y-1/2"
+                  aria-label="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
 
             <div className="relative">
@@ -268,6 +331,17 @@ function App() {
                 className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
               />
             </div>
+
+            {(searchText !== "" ||
+              selectedStatus !== "all" ||
+              selectedService !== "all") && (
+              <button
+                onClick={clearFilters}
+                className="btn btn-default whitespace-nowrap"
+              >
+                Clear All
+              </button>
+            )}
           </div>
 
           {(selectedStatus === "all" || selectedStatus === "watching") && (
