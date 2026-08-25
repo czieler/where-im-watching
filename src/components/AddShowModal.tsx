@@ -6,17 +6,10 @@ import {
 } from "@headlessui/react";
 import { ImageOff } from "lucide-react";
 import { useState } from "react";
+import type { NewShow } from "./types/show";
 import useShowSearch from "../hooks/useShowSearch";
 import type { TVMazeShow } from "../services/tvmaze";
 import PrettySelect from "./PrettySelect";
-
-type ShowStatus = "watching" | "wantToWatch" | "completed" | "onHold";
-
-type NewShow = {
-  title: string;
-  service: string;
-  status: ShowStatus;
-};
 
 type AddShowModalProps = {
   onClose: () => void;
@@ -50,6 +43,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
       title: selectedShow.name,
       service,
       status,
+      imageUrl: selectedShow.image?.medium,
     });
   };
 

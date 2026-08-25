@@ -1,10 +1,6 @@
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
-
-type Show = {
-  title: string;
-  service: string;
-};
+import type { Show } from "../types/show";
 
 type ShowListProps = {
   title: string;
@@ -12,11 +8,7 @@ type ShowListProps = {
   defaultExpanded?: boolean;
 };
 
-function ShowList({
-  title,
-  shows,
-  defaultExpanded = true,
-}: ShowListProps) {
+function ShowList({ title, shows, defaultExpanded = true }: ShowListProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -43,9 +35,19 @@ function ShowList({
               shows.map((show) => (
                 <div
                   key={show.title}
-                  className="show-list-row flex items-center justify-between border-b px-5 py-4 last:border-b-0"
+                  className="show-list-row flex items-center justify-between border-b px-5 py-3 last:border-b-0"
                 >
-                  <span className="font-semibold">{show.title}</span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {show.imageUrl && (
+                      <img
+                        src={show.imageUrl}
+                        alt=""
+                        className="h-14 w-10 shrink-0 rounded object-cover"
+                      />
+                    )}
+
+                    <span className="font-semibold">{show.title}</span>
+                  </div>
 
                   <span className="show-service text-sm font-medium">
                     {show.service}

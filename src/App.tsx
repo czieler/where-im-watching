@@ -4,6 +4,7 @@ import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
+import type { NewShow } from "./types/show";
 import {
   List,
   Layers,
@@ -17,14 +18,6 @@ import {
 } from "lucide-react";
 
 type Theme = "light" | "dark" | "blues";
-
-type ShowStatus = "watching" | "wantToWatch" | "completed" | "onHold";
-
-type NewShow = {
-  title: string;
-  service: string;
-  status: ShowStatus;
-};
 
 const themes: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
@@ -103,8 +96,8 @@ function App() {
       (selectedService === "all" || show.service === selectedService),
   );
 
-  const handleAddShow = ({ title, service, status }: NewShow) => {
-    const show = { title, service };
+  const handleAddShow = ({ title, service, status, imageUrl }: NewShow) => {
+    const show = { title, service, imageUrl };
 
     switch (status) {
       case "watching":
@@ -257,7 +250,7 @@ function App() {
 
       {/* Everything to the right of the sidebar on desktop */}
       <div
-        className={`transition-all duration-200 ${
+        className={`min-h-screen transition-all duration-200 ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         }`}
       >
@@ -279,7 +272,7 @@ function App() {
         </header>
 
         {/* Main content */}
-        <main className="mx-auto max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
+        <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
           <div className="mb-6 flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search
