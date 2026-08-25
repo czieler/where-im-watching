@@ -4,7 +4,7 @@ import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
-import type { NewShow } from "./types/show";
+import type { Show, NewShow } from "./types/show";
 import {
   List,
   Layers,
@@ -40,8 +40,9 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [showToEdit, setShowToEdit] = useState<Show | null>(null);
 
-  const [watching, setWatching] = useState([
+  const [watching, setWatching] = useState<Show[]>([
     {
       id: 1,
       title: "The Last of Us",
@@ -58,7 +59,7 @@ function App() {
     },
   ]);
 
-  const [wantToWatch, setWantToWatch] = useState([
+  const [wantToWatch, setWantToWatch] = useState<Show[]>([
     {
       id: 3,
       title: "House of the Dragon",
@@ -82,7 +83,7 @@ function App() {
     },
   ]);
 
-  const [completed, setCompleted] = useState([
+  const [completed, setCompleted] = useState<Show[]>([
     {
       id: 6,
       title: "Breaking Bad",
@@ -94,7 +95,7 @@ function App() {
       id: 7,
       title: "The Good Place",
       service: "Netflix",
-      imagUrl:
+      imageUrl:
         "https://static.tvmaze.com/uploads/images/medium_portrait/395/989291.jpg",
     },
   ]);
@@ -138,8 +139,8 @@ function App() {
       (selectedService === "all" || show.service === selectedService),
   );
 
-  const handleAddShow = ({ title, service, status, imageUrl }: NewShow) => {
-    const show = { title, service, imageUrl };
+  const handleAddShow = ({ id, title, service, status, imageUrl }: NewShow) => {
+    const show = { id, title, service, imageUrl };
 
     switch (status) {
       case "watching":
@@ -160,6 +161,24 @@ function App() {
     }
 
     setIsAddOpen(false);
+  };
+
+  const handleEditShow = (updatedShow: NewShow) => {
+    setWatching((current) =>
+      current.filter((show) => show.id !== updatedShow.id),
+    );
+    setWantToWatch((current) =>
+      current.filter((show) => show.id !== updatedShow.id),
+    );
+    setCompleted((current) =>
+      current.filter((show) => show.id !== updatedShow.id),
+    );
+    setOnHold((current) =>
+      current.filter((show) => show.id !== updatedShow.id),
+    );
+
+    handleAddShow(updatedShow);
+    setShowToEdit(null);
   };
 
   const handleRemoveShow = (id: number) => {
@@ -413,6 +432,7 @@ function App() {
             <ShowList
               title="Currently Watching"
               shows={filteredWatching}
+              onEdit={setShowToEdit}
               onRemove={handleRemoveShow}
             />
           )}
@@ -421,6 +441,7 @@ function App() {
             <ShowList
               title="Want to Watch"
               shows={filteredWantToWatch}
+              onEdit={setShowToEdit}
               onRemove={handleRemoveShow}
             />
           )}
@@ -430,6 +451,7 @@ function App() {
               title="Completed"
               shows={filteredCompleted}
               defaultExpanded={false}
+              onEdit={setShowToEdit}
               onRemove={handleRemoveShow}
             />
           )}
@@ -439,6 +461,7 @@ function App() {
               title="On Hold"
               shows={filteredOnHold}
               defaultExpanded={false}
+              onEdit={setShowToEdit}
               onRemove={handleRemoveShow}
             />
           )}
@@ -524,7 +547,15 @@ function App() {
       {isAddOpen && (
         <AddShowModal
           onClose={() => setIsAddOpen(false)}
-          onAdd={handleAddShow}
+          onSave={handleAddShow}
+        />
+      )}
+
+      {showToEdit && (
+        <AddShowModal
+          show={showToEdit}
+          onClose={() => setShowToEdit(null)}
+          onSave={handleEditShow}
         />
       )}
     </div>

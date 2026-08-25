@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, ImageOff, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, ImageOff, Trash2, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { Show } from "../types/show";
 import ConfirmModal from "./ConfirmModal";
@@ -6,6 +6,7 @@ import ConfirmModal from "./ConfirmModal";
 type ShowListProps = {
   title: string;
   shows: Show[];
+  onEdit: (show: Show) => void;
   onRemove: (id: number) => void;
   defaultExpanded?: boolean;
 };
@@ -13,6 +14,7 @@ type ShowListProps = {
 function ShowList({
   title,
   shows,
+  onEdit,
   onRemove,
   defaultExpanded = true,
 }: ShowListProps) {
@@ -66,6 +68,15 @@ function ShowList({
                       <span className="text-muted text-sm font-medium">
                         {show.service}
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={() => onEdit(show)}
+                        className="themed-icon"
+                        aria-label={`Edit ${show.title}`}
+                      >
+                        <Pencil size={18} />
+                      </button>
 
                       <button
                         type="button"
