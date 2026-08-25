@@ -16,9 +16,23 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-function App() {
-  type Theme = "light" | "dark" | "blues";
+type Theme = "light" | "dark" | "blues";
 
+type ShowStatus = "watching" | "wantToWatch" | "completed" | "onHold";
+
+type NewShow = {
+  title: string;
+  service: string;
+  status: ShowStatus;
+};
+
+const themes: { value: Theme; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "blues", label: "Blues" },
+];
+
+function App() {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   const [theme, setTheme] = useState<Theme>(() => {
@@ -33,21 +47,6 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-  };
-
-  const clearFilters = () => {
-    setSearchText("");
-    setSelectedStatus("all");
-    setSelectedService("all");
-  };
-
-  const [addTarget, setAddTarget] = useState<"watching" | "wantToWatch">(
-    "watching",
-  );
 
   const [watching, setWatching] = useState([
     { title: "The Last of Us", service: "Hulu" },
@@ -68,6 +67,17 @@ function App() {
   const [onHold, setOnHold] = useState([
     { title: "Yellowjackets", service: "Paramount+" },
   ]);
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  const clearFilters = () => {
+    setSearchText("");
+    setSelectedStatus("all");
+    setSelectedService("all");
+  };
 
   const filteredWatching = watching.filter(
     (show) =>
@@ -92,6 +102,30 @@ function App() {
       show.title.toLowerCase().includes(searchText.toLowerCase()) &&
       (selectedService === "all" || show.service === selectedService),
   );
+
+  const handleAddShow = ({ title, service, status }: NewShow) => {
+    const show = { title, service };
+
+    switch (status) {
+      case "watching":
+        setWatching((current) => [...current, show]);
+        break;
+
+      case "wantToWatch":
+        setWantToWatch((current) => [...current, show]);
+        break;
+
+      case "completed":
+        setCompleted((current) => [...current, show]);
+        break;
+
+      case "onHold":
+        setOnHold((current) => [...current, show]);
+        break;
+    }
+
+    setIsAddOpen(false);
+  };
 
   return (
     <div className="app" data-theme={theme}>
@@ -159,41 +193,20 @@ function App() {
 
                   {isThemeMenuOpen && (
                     <div className="theme-mini-menu absolute bottom-0 left-full z-50 ml-4 w-36 overflow-hidden rounded-lg border shadow-lg">
-                      <button
-                        onClick={() => {
-                          handleThemeChange("light");
-                          setIsThemeMenuOpen(false);
-                        }}
-                        className={`theme-mini-menu-item ${
-                          theme === "light" ? "selected" : ""
-                        }`}
-                      >
-                        Light
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleThemeChange("dark");
-                          setIsThemeMenuOpen(false);
-                        }}
-                        className={`theme-mini-menu-item ${
-                          theme === "dark" ? "selected" : ""
-                        }`}
-                      >
-                        Dark
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleThemeChange("blues");
-                          setIsThemeMenuOpen(false);
-                        }}
-                        className={`theme-mini-menu-item ${
-                          theme === "blues" ? "selected" : ""
-                        }`}
-                      >
-                        Blues
-                      </button>
+                      {themes.map((themeOption) => (
+                        <button
+                          key={themeOption.value}
+                          onClick={() => {
+                            handleThemeChange(themeOption.value);
+                            setIsThemeMenuOpen(false);
+                          }}
+                          className={`theme-mini-menu-item ${
+                            theme === themeOption.value ? "selected" : ""
+                          }`}
+                        >
+                          {themeOption.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -353,17 +366,11 @@ function App() {
           </div>
 
           {(selectedStatus === "all" || selectedStatus === "watching") && (
-            <ShowList
-              title="Currently Watching"
-              shows={filteredWatching}
-            />
+            <ShowList title="Currently Watching" shows={filteredWatching} />
           )}
 
           {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
-            <ShowList
-              title="Want to Watch"
-              shows={filteredWantToWatch}
-            />
+            <ShowList title="Want to Watch" shows={filteredWantToWatch} />
           )}
 
           {(selectedStatus === "all" || selectedStatus === "completed") && (
@@ -460,7 +467,12 @@ function App() {
         </div>
       )}
 
-      {isAddOpen && <AddShowModal onClose={() => setIsAddOpen(false)} />}
+      {isAddOpen && (
+        <AddShowModal
+          onClose={() => setIsAddOpen(false)}
+          onAdd={handleAddShow}
+        />
+      )}
     </div>
   );
 }

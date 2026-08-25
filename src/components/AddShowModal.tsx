@@ -4,22 +4,35 @@ import {
   ComboboxOption,
   ComboboxOptions,
 } from "@headlessui/react";
-import PrettySelect from "./PrettySelect";
+import { ImageOff } from "lucide-react";
 import { useState } from "react";
 import useShowSearch from "../hooks/useShowSearch";
-import { ImageOff } from "lucide-react";
 import type { TVMazeShow } from "../services/tvmaze";
+import PrettySelect from "./PrettySelect";
+
+type ShowStatus = "watching" | "wantToWatch" | "completed" | "onHold";
+
+type NewShow = {
+  title: string;
+  service: string;
+  status: ShowStatus;
+};
 
 type AddShowModalProps = {
   onClose: () => void;
+  onAdd: (show: NewShow) => void;
 };
 
-function AddShowModal({ onClose }: AddShowModalProps) {
+function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState("watching");
+  const [status, setStatus] = useState<ShowStatus>("watching");
   const [service, setService] = useState("Hulu");
   const [selectedShow, setSelectedShow] = useState<TVMazeShow | null>(null);
-  const { searchResults, isSearching, searchError } = useShowSearch(title);
+
+  const { searchResults, isSearching, searchError } = useShowSearch(
+    selectedShow ? "" : title,
+  );
+
   const handleShowSelected = (show: TVMazeShow | null) => {
     setSelectedShow(show);
 
@@ -28,9 +41,27 @@ function AddShowModal({ onClose }: AddShowModalProps) {
     }
   };
 
+  const handleSubmit = () => {
+    if (!selectedShow) {
+      return;
+    }
+
+    onAdd({
+      title: selectedShow.name,
+      service,
+      status,
+    });
+  };
+
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
-      <div className="modal w-full max-w-md rounded-xl p-6 shadow-lg">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+        className="modal w-full max-w-md rounded-xl p-6 shadow-lg"
+      >
         <h2 className="text-xl font-bold">Add Show</h2>
 
         <div className="mt-6">
@@ -95,6 +126,8 @@ function AddShowModal({ onClose }: AddShowModalProps) {
             </div>
           </Combobox>
 
+          {searchError && <p className="mt-2 text-sm">{searchError}</p>}
+
           {selectedShow && (
             <div className="selected-show mt-4 flex gap-4 rounded-lg border p-4">
               {selectedShow.image ? (
@@ -139,7 +172,7 @@ function AddShowModal({ onClose }: AddShowModalProps) {
               id="show-status"
               label="Status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => setStatus(e.target.value as ShowStatus)}
             >
               <option value="watching">Watching</option>
               <option value="wantToWatch">Want to Watch</option>
@@ -162,14 +195,22 @@ function AddShowModal({ onClose }: AddShowModalProps) {
               <option value="Max">Max</option>
             </PrettySelect>
           </div>
-
-          {searchError && <p className="mt-2 text-sm">{searchError}</p>}
         </div>
 
-        <button onClick={onClose} className="btn btn-default mt-6">
-          Cancel
-        </button>
-      </div>
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn btn-default">
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!selectedShow}
+          >
+            Add
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
