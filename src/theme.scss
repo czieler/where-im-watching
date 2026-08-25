@@ -97,7 +97,9 @@
     color: var(--theme-text);
   }
 
-  /* Sidebar */
+  /* ========================================================
+     SIDEBAR
+     ======================================================== */
 
   .app-sidebar {
     background-color: var(--theme-surface);
@@ -119,7 +121,9 @@
     }
   }
 
-  /* Navigation */
+  /* ========================================================
+     NAVIGATION
+     ======================================================== */
 
   .nav-item {
     color: var(--theme-text-muted);
@@ -140,7 +144,9 @@
     }
   }
 
-  /* Header */
+  /* ========================================================
+     HEADER
+     ======================================================== */
 
   .app-header {
     background-color: var(--theme-surface);
@@ -148,14 +154,13 @@
     border-color: var(--theme-border);
   }
 
-  /* Inputs / selects */
+  /* ========================================================
+     INPUTS / SELECTS
+     ======================================================== */
 
   .app-input,
   .app-select,
-  .theme-select,
-  input,
-  select,
-  textarea {
+  .theme-select {
     background-color: var(--theme-input-bg);
     color: var(--theme-input-text);
     border-color: var(--theme-border);
@@ -197,7 +202,39 @@
     color: var(--theme-text-muted);
   }
 
-  /* Search */
+  /* ========================================================
+     GENERIC THEMED STYLES
+     ======================================================== */
+
+  .text-muted {
+    color: var(--theme-text-muted);
+  }
+
+  .themed-icon {
+    color: var(--theme-text-muted);
+
+    &:hover {
+      color: var(--theme-text);
+    }
+  }
+
+  .image-placeholder {
+    background-color: var(--theme-hover);
+    color: var(--theme-text-muted);
+  }
+
+  .detail-card {
+    background-color: var(--theme-surface);
+    border-color: var(--theme-border);
+
+    p {
+      color: var(--theme-text-muted);
+    }
+  }
+
+  /* ========================================================
+     SEARCH
+     ======================================================== */
 
   .search-results {
     background-color: var(--theme-surface);
@@ -225,21 +262,9 @@
     }
   }
 
-  .show-image-placeholder {
-    background-color: var(--theme-hover);
-    color: var(--theme-text-muted);
-  }
-
-  .selected-show {
-    background-color: var(--theme-surface);
-    border-color: var(--theme-border);
-
-    p {
-      color: var(--theme-text-muted);
-    }
-  }
-
-  /* Show lists */
+  /* ========================================================
+     SHOW LISTS
+     ======================================================== */
 
   .empty-state {
     color: var(--theme-text-muted);
@@ -276,19 +301,9 @@
     }
   }
 
-  .show-service {
-    color: var(--theme-text-muted);
-  }
-
-  /* Buttons */
-
-  .themed-remove {
-    color: var(--theme-text-muted);
-
-    &:hover {
-      color: var(--theme-text);
-    }
-  }
+  /* ========================================================
+     BUTTONS
+     ======================================================== */
 
   .btn-primary {
     background-color: var(--theme-accent);
@@ -311,7 +326,9 @@
     }
   }
 
-  /* Theme menu */
+  /* ========================================================
+     THEME MINI MENU
+     ======================================================== */
 
   .theme-mini-menu {
     background-color: var(--theme-surface);
@@ -333,7 +350,9 @@
     }
   }
 
-  /* Mobile */
+  /* ========================================================
+     MOBILE
+     ======================================================== */
 
   .mobile-bottom-nav {
     background-color: var(--theme-surface);
@@ -354,7 +373,9 @@
     color: var(--theme-text);
   }
 
-  /* Modal */
+  /* ========================================================
+     MODALS
+     ======================================================== */
 
   .modal-overlay {
     background-color: var(--theme-overlay);

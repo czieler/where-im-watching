@@ -54,7 +54,7 @@ function ShowList({
                           className="h-12 w-9 shrink-0 rounded object-cover"
                         />
                       ) : (
-                        <div className="show-image-placeholder flex h-12 w-9 shrink-0 items-center justify-center rounded">
+                        <div className="image-placeholder flex h-12 w-9 shrink-0 items-center justify-center rounded">
                           <ImageOff size={16} />
                         </div>
                       )}
@@ -63,7 +63,7 @@ function ShowList({
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <span className="show-service text-sm font-medium">
+                      <span className="text-muted text-sm font-medium">
                         {show.service}
                       </span>
 
@@ -93,6 +93,7 @@ function ShowList({
 
       {showToRemove && (
         <ConfirmModal
+          title="Remove Show?"
           message={`Are you sure you want to remove "${showToRemove.title}"?`}
           onCancel={() => setShowToRemove(null)}
           onConfirm={() => {

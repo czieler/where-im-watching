@@ -1,14 +1,20 @@
 type ConfirmModalProps = {
+  title: string;
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-function ConfirmModal({ message, onConfirm, onCancel }: ConfirmModalProps) {
+function ConfirmModal({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+}: ConfirmModalProps) {
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
       <div className="modal w-full max-w-sm rounded-xl p-6 shadow-lg">
-        <h2 className="text-xl font-bold">Remove Show?</h2>
+        <h2 className="text-xl font-bold">{title}</h2>
 
         <p className="mt-4">{message}</p>
 

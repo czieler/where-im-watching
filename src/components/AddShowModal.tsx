@@ -96,7 +96,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
                           className="h-16 w-11 shrink-0 rounded object-cover"
                         />
                       ) : (
-                        <div className="show-image-placeholder flex h-16 w-11 shrink-0 items-center justify-center rounded">
+                        <div className="image-placeholder flex h-16 w-11 shrink-0 items-center justify-center rounded">
                           <ImageOff size={20} />
                         </div>
                       )}
@@ -124,7 +124,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
           {searchError && <p className="mt-2 text-sm">{searchError}</p>}
 
           {selectedShow && (
-            <div className="selected-show mt-4 flex gap-4 rounded-lg border p-4">
+            <div className="detail-card mt-4 flex gap-4 rounded-lg border p-4">
               {selectedShow.image ? (
                 <img
                   src={selectedShow.image.medium}
@@ -132,7 +132,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
                   className="h-28 w-20 shrink-0 rounded object-cover"
                 />
               ) : (
-                <div className="show-image-placeholder flex h-28 w-20 shrink-0 items-center justify-center rounded">
+                <div className="image-placeholder flex h-28 w-20 shrink-0 items-center justify-center rounded">
                   <ImageOff size={24} />
                 </div>
               )}
@@ -178,7 +178,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
 
           <div className="mt-4">
             <PrettySelect
-              id="show-service"
+              id="text-muted"
               label="Streaming Service"
               value={service}
               onChange={(e) => setService(e.target.value)}
