@@ -21,7 +21,6 @@
 
   --theme-hover: #f3f4f6;
 
-  /* Accent */
   --theme-accent: #0f766e;
   --theme-accent-hover: #115e59;
   --theme-accent-soft: #ccfbf1;
@@ -45,7 +44,6 @@
 
   --theme-hover: #2d3a4d;
 
-  /* Accent */
   --theme-accent: #14b8a6;
   --theme-accent-hover: #2dd4bf;
   --theme-accent-soft: #134e4a;
@@ -69,7 +67,6 @@
 
   --theme-hover: #e0edff;
 
-  /* Accent */
   --theme-accent: #2563eb;
   --theme-accent-hover: #1d4ed8;
   --theme-accent-soft: #dbeafe;
@@ -79,22 +76,12 @@
 }
 
 /* ==========================================================
-   GLOBAL THEME STYLES
+   THEME-DEPENDENT STYLES
    ========================================================== */
 
 [data-theme] {
-  min-height: 100vh;
-
   background-color: var(--theme-bg);
   color: var(--theme-text);
-
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-
-  /* ========================================================
-     GENERAL TEXT
-     ======================================================== */
 
   h1,
   h2,
@@ -105,22 +92,12 @@
     color: var(--theme-text);
   }
 
-  p {
-    color: inherit;
-  }
-
-  /* ========================================================
-     APP BACKGROUND
-     ======================================================== */
-
   &.app {
     background-color: var(--theme-bg);
     color: var(--theme-text);
   }
 
-  /* ========================================================
-     SIDEBAR
-     ======================================================== */
+  /* Sidebar */
 
   .app-sidebar {
     background-color: var(--theme-surface);
@@ -142,9 +119,7 @@
     }
   }
 
-  /* ========================================================
-     NAVIGATION
-     ======================================================== */
+  /* Navigation */
 
   .nav-item {
     color: var(--theme-text-muted);
@@ -165,27 +140,16 @@
     }
   }
 
-  /* ========================================================
-     HEADER
-     ======================================================== */
+  /* Header */
 
   .app-header {
     background-color: var(--theme-surface);
     color: var(--theme-text);
     border-color: var(--theme-border);
-    opacity: 1;
   }
 
-  /* ========================================================
-     INPUTS / SELECTS
-     ======================================================== */
-  .search-clear {
-    color: var(--theme-text-muted);
+  /* Inputs / selects */
 
-    &:hover {
-      color: var(--theme-text);
-    }
-  }
   .app-input,
   .app-select,
   .theme-select,
@@ -211,22 +175,76 @@
     color: var(--theme-input-text);
   }
 
+  .pretty-placeholder {
+    label {
+      color: var(--theme-text-muted);
+    }
+
+    .app-input:focus + label,
+    .app-input:not(:placeholder-shown) + label {
+      color: var(--theme-accent);
+    }
+  }
+
+  .pretty-select {
+    label {
+      color: var(--theme-accent);
+    }
+  }
+
   .select-chevron,
   .search-icon {
     color: var(--theme-text-muted);
   }
 
-  /* ========================================================
-     SHOW LIST
-     ======================================================== */
+  /* Search */
+
+  .search-results {
+    background-color: var(--theme-surface);
+    border-color: var(--theme-border);
+  }
+
+  .search-result {
+    color: var(--theme-text);
+    border-color: var(--theme-border);
+
+    &:hover {
+      background-color: var(--theme-hover);
+    }
+
+    div:last-child {
+      color: var(--theme-text-muted);
+    }
+  }
+
+  .search-clear {
+    color: var(--theme-text-muted);
+
+    &:hover {
+      color: var(--theme-text);
+    }
+  }
+
+  .show-image-placeholder {
+    background-color: var(--theme-hover);
+    color: var(--theme-text-muted);
+  }
+
+  .selected-show {
+    background-color: var(--theme-surface);
+    border-color: var(--theme-border);
+
+    p {
+      color: var(--theme-text-muted);
+    }
+  }
+
+  /* Show lists */
 
   .empty-state {
     color: var(--theme-text-muted);
-
-    p {
-      color: inherit;
-    }
   }
+
   .show-list {
     background-color: var(--theme-surface);
     color: var(--theme-text);
@@ -237,10 +255,7 @@
     background-color: var(--theme-accent);
     color: var(--theme-accent-text);
 
-    h3 {
-      color: var(--theme-accent-text);
-    }
-
+    h3,
     svg {
       color: var(--theme-accent-text);
     }
@@ -265,9 +280,7 @@
     color: var(--theme-text-muted);
   }
 
-  /* ========================================================
-     BUTTONS
-     ======================================================== */
+  /* Buttons */
 
   .btn-primary {
     background-color: var(--theme-accent);
@@ -290,19 +303,14 @@
     }
   }
 
-  /* ========================================================
-     THEME MINI MENU
-     ======================================================== */
+  /* Theme menu */
+
   .theme-mini-menu {
     background-color: var(--theme-surface);
     color: var(--theme-text);
     border-color: var(--theme-border);
 
     .theme-mini-menu-item {
-      display: block;
-      width: 100%;
-      padding: 0.65rem 0.9rem;
-      text-align: left;
       color: var(--theme-text);
       background-color: transparent;
 
@@ -313,13 +321,11 @@
       &.selected {
         background-color: var(--theme-accent-soft);
         color: var(--theme-accent);
-        font-weight: 600;
       }
     }
   }
-  /* ========================================================
-     MOBILE BOTTOM NAVIGATION
-     ======================================================== */
+
+  /* Mobile */
 
   .mobile-bottom-nav {
     background-color: var(--theme-surface);
@@ -331,10 +337,6 @@
     color: var(--theme-accent);
   }
 
-  /* ========================================================
-     MOBILE MENU
-     ======================================================== */
-
   .mobile-menu-overlay {
     background-color: var(--theme-overlay);
   }
@@ -344,9 +346,7 @@
     color: var(--theme-text);
   }
 
-  /* ========================================================
-     MODAL
-     ======================================================== */
+  /* Modal */
 
   .modal-overlay {
     background-color: var(--theme-overlay);
@@ -356,13 +356,5 @@
     background-color: var(--theme-surface);
     color: var(--theme-text);
     border-color: var(--theme-border);
-  }
-
-  /* ========================================================
-     ICONS
-     ======================================================== */
-
-  svg {
-    color: inherit;
   }
 }

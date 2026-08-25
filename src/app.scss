@@ -1,0 +1,76 @@
+.pretty-placeholder {
+  position: relative;
+
+  .app-input {
+    width: 100%;
+    padding: 1.1rem 0.75rem 0.45rem;
+    border-radius: 0.5rem;
+    outline: none;
+  }
+
+  label {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+
+    transition:
+      top 0.15s ease,
+      transform 0.15s ease,
+      font-size 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .app-input:focus + label,
+  .app-input:not(:placeholder-shown) + label {
+    top: 0.3rem;
+    transform: none;
+    font-size: 0.7rem;
+  }
+}
+
+.pretty-select {
+  position: relative;
+
+  .app-select {
+    width: 100%;
+    appearance: none;
+    padding: 1.1rem 2.5rem 0.45rem 0.75rem;
+    border: 1px solid;
+    border-radius: 0.5rem;
+  }
+
+  label {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.75rem;
+    font-size: 0.7rem;
+    pointer-events: none;
+  }
+
+  .select-chevron {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+}
+
+.search-results {
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.search-result {
+  cursor: pointer;
+}
+
+.show-image-placeholder {
+  flex-shrink: 0;
+}
+
+.search-clear {
+  cursor: pointer;
+}

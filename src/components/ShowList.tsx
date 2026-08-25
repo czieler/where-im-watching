@@ -9,14 +9,12 @@ type Show = {
 type ShowListProps = {
   title: string;
   shows: Show[];
-  onAdd: () => void;
   defaultExpanded?: boolean;
 };
 
 function ShowList({
   title,
   shows,
-  onAdd,
   defaultExpanded = true,
 }: ShowListProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -64,12 +62,6 @@ function ShowList({
             )}
           </>
         )}
-      </div>
-
-      <div className="mt-3 flex justify-end">
-        <button onClick={onAdd} className="btn btn-primary">
-          + Add
-        </button>
       </div>
     </section>
   );

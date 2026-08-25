@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./app.scss";
 import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
 import ShowList from "./components/ShowList";
@@ -342,16 +343,19 @@ function App() {
                 Clear All
               </button>
             )}
+
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="btn btn-primary self-center whitespace-nowrap"
+            >
+              + Add
+            </button>
           </div>
 
           {(selectedStatus === "all" || selectedStatus === "watching") && (
             <ShowList
               title="Currently Watching"
               shows={filteredWatching}
-              onAdd={() => {
-                setAddTarget("watching");
-                setIsAddOpen(true);
-              }}
             />
           )}
 
@@ -359,10 +363,6 @@ function App() {
             <ShowList
               title="Want to Watch"
               shows={filteredWantToWatch}
-              onAdd={() => {
-                setAddTarget("wantToWatch");
-                setIsAddOpen(true);
-              }}
             />
           )}
 
@@ -370,9 +370,6 @@ function App() {
             <ShowList
               title="Completed"
               shows={filteredCompleted}
-              onAdd={() => {
-                console.log("Add to Completed");
-              }}
               defaultExpanded={false}
             />
           )}
@@ -381,9 +378,6 @@ function App() {
             <ShowList
               title="On Hold"
               shows={filteredOnHold}
-              onAdd={() => {
-                console.log("Add to On Hold");
-              }}
               defaultExpanded={false}
             />
           )}

@@ -31,8 +31,11 @@ Current functionality includes:
 - Persistent theme preference using localStorage
 - Collapsible desktop navigation
 - Mobile navigation and settings menu
+- TV show search using the TVmaze API
+- Debounced API searching to avoid unnecessary requests
+- Show search results with artwork, title, premiere year, and network/streaming information
 
-The application currently uses sample show data while the UI and application structure are being developed.
+The application currently uses sample watchlist data while the UI and application structure are being developed.
 
 ## Tech Stack
 
@@ -43,6 +46,40 @@ The application currently uses sample show data while the UI and application str
 - SCSS
 - CSS custom properties
 - Lucide React icons
+- Headless UI
+- TVmaze API
+
+## Technical Decisions
+
+### Component-Based UI
+
+Reusable React components are used for application UI and repeated interaction patterns.
+
+For example, the application includes a reusable `PrettyPlaceholderInput` component that encapsulates floating-label input behavior rather than duplicating the required markup and styling throughout the application.
+
+### Theming
+
+The application uses CSS custom properties to keep theme styling separate from component logic.
+
+Components use semantic CSS classes while each theme defines its own colors for backgrounds, surfaces, text, borders, accents, and interactive states.
+
+The selected theme is stored in `localStorage`, allowing the preference to persist between browser sessions.
+
+### TV Show Search
+
+TV show search is powered by the TVmaze API.
+
+Search requests are debounced so the application does not make an API request for every individual keystroke. Search results include available show artwork and basic metadata.
+
+As persistent storage is added, shared show metadata can be cached by the application rather than repeatedly requesting information that changes infrequently.
+
+### Headless UI
+
+Headless UI is used for complex interactive controls such as the TV show search combobox.
+
+Rather than manually recreating behaviors such as keyboard navigation, focus management, selection, and accessible combobox interactions, Headless UI provides those interaction primitives while allowing the application to retain complete control over its visual design.
+
+This keeps the UI consistent with the application's custom theme system without introducing a heavily styled component library.
 
 ## Planned Features
 
@@ -59,9 +96,9 @@ The application currently uses sample show data while the UI and application str
 
 ### Show Search & Metadata
 
-- Search for TV shows and movies using an external media API
-- Retrieve show metadata and artwork
-- Cache show information locally to reduce unnecessary API requests
+- Select shows from TVmaze-powered search results
+- Store shared show metadata and artwork references
+- Cache show information to reduce unnecessary API requests
 - Periodically refresh cached metadata when appropriate
 
 ### Accounts & Data
@@ -77,14 +114,6 @@ The application currently uses sample show data while the UI and application str
 - Manage the streaming services a user subscribes to
 - Filter watchlists by service
 - Help identify services that may no longer be needed based on current watch activity
-
-## UI & Theming
-
-The application uses CSS custom properties to keep theme styling separate from component logic.
-
-Components use semantic CSS classes while each theme defines its own colors for backgrounds, surfaces, text, borders, accents, and interactive states.
-
-The selected theme is currently stored in `localStorage`, allowing the preference to persist between browser sessions.
 
 ## Development
 
