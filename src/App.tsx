@@ -334,7 +334,7 @@ function App() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="Search my list..."
-                className="app-input w-full rounded-lg border py-2.5 pl-10 pr-4 outline-none"
+                className="app-input w-full rounded-lg border py-2.5 pl-10 pr-10 outline-none"
               />
 
               {searchText && (
@@ -349,43 +349,45 @@ function App() {
               )}
             </div>
 
-            <div className="relative">
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="app-select w-44 appearance-none rounded-lg border px-4 py-2.5"
-              >
-                <option value="all">All Statuses</option>
-                <option value="watching">Watching</option>
-                <option value="wantToWatch">Want to Watch</option>
-                <option value="completed">Completed</option>
-                <option value="onHold">On Hold</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3 lg:flex lg:gap-3">
+              <div className="relative">
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="watching">Watching</option>
+                  <option value="wantToWatch">Want to Watch</option>
+                  <option value="completed">Completed</option>
+                  <option value="onHold">On Hold</option>
+                </select>
 
-              <ChevronDown
-                size={16}
-                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-              />
-            </div>
+                <ChevronDown
+                  size={16}
+                  className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                />
+              </div>
 
-            <div className="relative">
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="app-select w-44 appearance-none rounded-lg border px-4 py-2.5"
-              >
-                <option value="all">All Services</option>
-                <option value="Hulu">Hulu</option>
-                <option value="Netflix">Netflix</option>
-                <option value="Paramount+">Paramount+</option>
-                <option value="Apple TV+">Apple TV+</option>
-                <option value="Max">Max</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
+                >
+                  <option value="all">All Services</option>
+                  <option value="Hulu">Hulu</option>
+                  <option value="Netflix">Netflix</option>
+                  <option value="Paramount+">Paramount+</option>
+                  <option value="Apple TV+">Apple TV+</option>
+                  <option value="Max">Max</option>
+                </select>
 
-              <ChevronDown
-                size={16}
-                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-              />
+                <ChevronDown
+                  size={16}
+                  className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                />
+              </div>
             </div>
 
             {(searchText !== "" ||
@@ -393,7 +395,7 @@ function App() {
               selectedService !== "all") && (
               <button
                 onClick={clearFilters}
-                className="btn btn-default whitespace-nowrap"
+                className="btn btn-default self-start whitespace-nowrap lg:self-center"
               >
                 Clear All
               </button>
@@ -401,7 +403,7 @@ function App() {
 
             <button
               onClick={() => setIsAddOpen(true)}
-              className="btn btn-primary self-center whitespace-nowrap"
+              className="btn btn-primary hidden self-center whitespace-nowrap md:inline-flex"
             >
               + Add
             </button>
