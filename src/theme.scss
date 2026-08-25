@@ -282,6 +282,14 @@
 
   /* Buttons */
 
+  .themed-remove {
+    color: var(--theme-text-muted);
+
+    &:hover {
+      color: var(--theme-text);
+    }
+  }
+
   .btn-primary {
     background-color: var(--theme-accent);
     color: var(--theme-accent-text);

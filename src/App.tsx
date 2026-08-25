@@ -42,23 +42,65 @@ function App() {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [watching, setWatching] = useState([
-    { title: "The Last of Us", service: "Hulu" },
-    { title: "Slow Horses", service: "Apple TV+" },
+    {
+      id: 1,
+      title: "The Last of Us",
+      service: "Hulu",
+      imageUrl:
+        "	https://static.tvmaze.com/uploads/images/medium_portrait/563/1409008.jpg",
+    },
+    {
+      id: 2,
+      title: "Slow Horses",
+      service: "Apple TV+",
+      imageUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/637/1593462.jpg",
+    },
   ]);
 
   const [wantToWatch, setWantToWatch] = useState([
-    { title: "House of the Dragon", service: "Max" },
-    { title: "Ted Lasso", service: "Apple TV+" },
-    { title: "Only Murders in the Building", service: "Hulu" },
+    {
+      id: 3,
+      title: "House of the Dragon",
+      service: "Max",
+      imageUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/627/1568449.jpg",
+    },
+    {
+      id: 4,
+      title: "Ted Lasso",
+      service: "Apple TV+",
+      imageUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/634/1585930.jpg",
+    },
+    {
+      id: 5,
+      title: "Only Murders in the Building",
+      service: "Hulu",
+      imageUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/586/1466415.jpg",
+    },
   ]);
 
   const [completed, setCompleted] = useState([
-    { title: "Breaking Bad", service: "Netflix" },
-    { title: "The Good Place", service: "Netflix" },
+    {
+      id: 6,
+      title: "Breaking Bad",
+      service: "Netflix",
+      imageUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/501/1253519.jpg",
+    },
+    {
+      id: 7,
+      title: "The Good Place",
+      service: "Netflix",
+      imagUrl:
+        "https://static.tvmaze.com/uploads/images/medium_portrait/395/989291.jpg",
+    },
   ]);
 
   const [onHold, setOnHold] = useState([
-    { title: "Yellowjackets", service: "Paramount+" },
+    { id: 8, title: "Yellowjackets", service: "Paramount+" },
   ]);
 
   const handleThemeChange = (newTheme: Theme) => {
@@ -118,6 +160,13 @@ function App() {
     }
 
     setIsAddOpen(false);
+  };
+
+  const handleRemoveShow = (id: number) => {
+    setWatching((current) => current.filter((show) => show.id !== id));
+    setWantToWatch((current) => current.filter((show) => show.id !== id));
+    setCompleted((current) => current.filter((show) => show.id !== id));
+    setOnHold((current) => current.filter((show) => show.id !== id));
   };
 
   return (
@@ -359,11 +408,19 @@ function App() {
           </div>
 
           {(selectedStatus === "all" || selectedStatus === "watching") && (
-            <ShowList title="Currently Watching" shows={filteredWatching} />
+            <ShowList
+              title="Currently Watching"
+              shows={filteredWatching}
+              onRemove={handleRemoveShow}
+            />
           )}
 
           {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
-            <ShowList title="Want to Watch" shows={filteredWantToWatch} />
+            <ShowList
+              title="Want to Watch"
+              shows={filteredWantToWatch}
+              onRemove={handleRemoveShow}
+            />
           )}
 
           {(selectedStatus === "all" || selectedStatus === "completed") && (
@@ -371,6 +428,7 @@ function App() {
               title="Completed"
               shows={filteredCompleted}
               defaultExpanded={false}
+              onRemove={handleRemoveShow}
             />
           )}
 
@@ -379,6 +437,7 @@ function App() {
               title="On Hold"
               shows={filteredOnHold}
               defaultExpanded={false}
+              onRemove={handleRemoveShow}
             />
           )}
         </main>

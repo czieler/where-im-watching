@@ -40,6 +40,7 @@ function AddShowModal({ onClose, onAdd }: AddShowModalProps) {
     }
 
     onAdd({
+      id: selectedShow.id,
       title: selectedShow.name,
       service,
       status,
