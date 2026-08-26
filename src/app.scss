@@ -83,3 +83,90 @@
     }
   }
 }
+
+/* ==========================================================
+   AUTH
+   ========================================================== */
+
+.auth-page {
+  background-color: var(--theme-bg);
+}
+
+.auth-card {
+  background-color: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+.auth-intro {
+  background-color: var(--theme-accent-soft);
+}
+
+.auth-form {
+  background-color: var(--theme-surface);
+}
+
+.auth-tab {
+  color: var(--theme-text-muted);
+  border-bottom: 2px solid transparent;
+
+  &.active {
+    color: var(--theme-accent);
+    border-color: var(--theme-accent);
+  }
+}
+
+.auth-link {
+  color: var(--theme-accent);
+
+  &:hover {
+    color: var(--theme-accent-hover);
+  }
+}
+
+.auth-divider {
+  background-color: var(--theme-border);
+}
+
+.auth-form {
+  background-color: var(--theme-surface);
+
+  @media (min-width: 768px) {
+    min-height: 650px;
+  }
+}
+
+@media (max-width: 767px) {
+  .auth-page {
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  .auth-card {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .auth-intro {
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+
+  .auth-intro img {
+    height: 4rem;
+    width: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .auth-intro h1 {
+    font-size: 1.5rem;
+  }
+
+  .auth-intro .space-y-4 {
+    display: none;
+  }
+
+  .auth-form {
+    padding: 2rem 1.5rem;
+  }
+}
