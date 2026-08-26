@@ -18,7 +18,7 @@ This is also a personal learning project I'm using to expand my front-end experi
 
 🚧 **Work in progress**
 
-The responsive application shell is in place and several core UI features are working.
+The responsive application shell and core watchlist interactions are in place. The project currently uses sample watchlist data while persistent storage and authentication are being developed.
 
 Current functionality includes:
 
@@ -26,22 +26,26 @@ Current functionality includes:
 - Collapsible watch-status sections
 - Search by show title
 - Filtering by watch status
-- Filtering by streaming service
+- Data-driven filtering by streaming service
 - Empty states when no shows match the current search or filters
 - Clear search and reset-all-filter controls
 - Light, Dark, and Blues themes
 - Persistent theme preference using `localStorage`
 - Collapsible desktop navigation
-- Mobile navigation and settings menu
+- Mobile settings menu
+- Floating mobile Add Show action
 - TV show search using the TVmaze API
 - Debounced API searching to avoid unnecessary requests
 - Search results with artwork, title, premiere year, and network/streaming information
 - Add shows directly from TVmaze search results
-- Show artwork thumbnails with fallback placeholders
+- Edit a show's watch status and streaming service
+- Move shows between watch-status sections
 - Remove shows with confirmation before deletion
+- Show artwork thumbnails with fallback placeholders
+- Known streaming-service suggestions with support for custom service names
+- Streaming-service filters automatically derived from services currently used in the watchlist
 - Reusable confirmation modal for destructive actions
-
-The application currently uses sample watchlist data while the UI and application structure are being developed. Persistent storage and user accounts are planned.
+- Reusable styled form controls and comboboxes
 
 ## Tech Stack
 
@@ -61,7 +65,7 @@ The application currently uses sample watchlist data while the UI and applicatio
 
 Reusable React components are used for application UI and repeated interaction patterns.
 
-Common controls and interaction patterns are extracted into reusable components rather than duplicating markup and behavior throughout the application. Examples include styled selects, show lists, the Add Show workflow, and a configurable confirmation modal.
+Common controls and interaction patterns are extracted into reusable components rather than duplicating markup and behavior throughout the application. Examples include show lists, styled selects, service selection, Add/Edit Show workflows, and a configurable confirmation modal.
 
 ### Theming
 
@@ -81,9 +85,19 @@ Selecting a result provides the metadata needed to add the show to the user's li
 
 As persistent storage is added, shared show metadata can be cached by the application rather than repeatedly requesting information that changes infrequently.
 
+### Streaming Services
+
+Streaming services are treated as metadata associated with a watchlist entry rather than as a separately managed part of the application.
+
+The Add/Edit workflow suggests a base set of known streaming services while allowing users to enter a custom service when needed.
+
+The service filter is derived from the user's current watchlist, so only services actually associated with tracked titles appear as filtering options.
+
+This avoids requiring users to separately maintain a list of streaming-service subscriptions.
+
 ### Headless UI
 
-Headless UI is used for complex interactive controls such as the TV show search combobox.
+Headless UI is used for interactive controls such as the TV show search and streaming-service comboboxes.
 
 Rather than manually recreating behaviors such as keyboard navigation, focus management, selection, and accessible combobox interactions, Headless UI provides those interaction primitives while allowing the application to retain complete control over its visual design.
 
@@ -93,52 +107,56 @@ This keeps the UI consistent with the application's custom theme system without 
 
 Watchlist changes use immutable React state updates rather than directly modifying existing arrays or objects.
 
-This keeps state changes predictable and aligns the application's UI patterns with modern React development practices.
+Editing a show's status removes it from its previous status collection and adds the updated entry to the appropriate collection, allowing the UI to respond directly to the updated application state.
 
 ## Planned Features
 
-### Show Tracking
+### Authentication & Guest Mode
 
-- Add and edit TV shows and movies
-- Track titles by status:
-  - Watching
-  - Want to Watch
-  - Completed
-  - On Hold
-- Track which streaming service a title is being watched on
-- Update watching progress
-- Track seasons and episodes
-- Notify users when new seasons become available
+Authentication UX has been designed and is planned for an upcoming development phase.
 
-### Show Search & Metadata
+Planned functionality includes:
 
-- Select shows from TVmaze-powered search results
-- Store shared show metadata and artwork references
-- Cache show information to reduce unnecessary API requests
-- Periodically refresh cached metadata when appropriate
+- User sign up and sign in
+- Forgot-password workflow
+- Continue as guest without requiring an account
+- Local persistence for guest watchlists
+- Clear messaging that guest data is stored in the browser and may be lost if browser/site data is cleared
+- Ability for a guest to create an account later without losing their existing watchlist
+- Cross-device syncing for signed-in users
+- Loading, validation, and authentication error states
 
-### Accounts & Data
+The authentication screens shown in the project image are **design concepts and have not yet been implemented**.
 
-- User accounts and authentication
+### Persistent Data
+
+- Supabase integration for authentication and persistent storage
 - Persistent user watchlists
 - Store user preferences
 - Save theme preferences to the user's profile
-- Database-backed show and service data
-- Supabase integration for authentication and persistent storage
+- Database-backed watchlist data
+- Shared show metadata and artwork references
+- Cache show information to reduce unnecessary API requests
+- Periodically refresh cached metadata when appropriate
+
+### Show Tracking
+
+- Update watching progress
+- Track seasons and episodes
+- Additional movie-specific metadata and workflows
 
 ### Streaming Services
 
-- Provide a default list of common streaming services
-- Allow users to add custom streaming services
-- Manage the services a user subscribes to
-- Filter watchlists by service
-- Help identify services that may no longer be needed based on current watch activity
+- Expand the default list of commonly used streaming services
+- Remember custom service names for future selection
+- Continue deriving filtering options from services actually used in the watchlist
 
 ### Future Ideas
 
 - New-season notifications for tracked shows
 - Optional paid notifications without requiring a subscription
 - Family or group shared watchlists
+- Insights into which streaming services are actively being used based on current watch activity
 
 ## Development
 
