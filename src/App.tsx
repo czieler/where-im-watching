@@ -7,7 +7,6 @@ import AddShowModal from "./components/AddShowModal";
 import type { Show, NewShow } from "./types/show";
 import {
   List,
-  Layers,
   User,
   Palette,
   Menu,
@@ -48,7 +47,7 @@ function App() {
       title: "The Last of Us",
       service: "Hulu",
       imageUrl:
-        "	https://static.tvmaze.com/uploads/images/medium_portrait/563/1409008.jpg",
+        "https://static.tvmaze.com/uploads/images/medium_portrait/563/1409008.jpg",
     },
     {
       id: 2,
@@ -100,9 +99,21 @@ function App() {
     },
   ]);
 
-  const [onHold, setOnHold] = useState([
-    { id: 8, title: "Yellowjackets", service: "Paramount+" },
+  const [onHold, setOnHold] = useState<Show[]>([
+    {
+      id: 8,
+      title: "Yellowjackets",
+      service: "Paramount+",
+    },
   ]);
+
+  const serviceOptions = Array.from(
+    new Set(
+      [...watching, ...wantToWatch, ...completed, ...onHold].map(
+        (show) => show.service,
+      ),
+    ),
+  ).sort();
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
@@ -167,12 +178,15 @@ function App() {
     setWatching((current) =>
       current.filter((show) => show.id !== updatedShow.id),
     );
+
     setWantToWatch((current) =>
       current.filter((show) => show.id !== updatedShow.id),
     );
+
     setCompleted((current) =>
       current.filter((show) => show.id !== updatedShow.id),
     );
+
     setOnHold((current) =>
       current.filter((show) => show.id !== updatedShow.id),
     );
@@ -218,15 +232,6 @@ function App() {
           >
             <List className="h-5 w-5 shrink-0" />
             {!isSidebarCollapsed && <span>My List</span>}
-          </a>
-
-          <a
-            href="#"
-            className="nav-item flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
-            title={isSidebarCollapsed ? "Services" : undefined}
-          >
-            <Layers className="h-5 w-5 shrink-0" />
-            {!isSidebarCollapsed && <span>Services</span>}
           </a>
 
           <div className="mt-auto">
@@ -395,11 +400,12 @@ function App() {
                   className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
                 >
                   <option value="all">All Services</option>
-                  <option value="Hulu">Hulu</option>
-                  <option value="Netflix">Netflix</option>
-                  <option value="Paramount+">Paramount+</option>
-                  <option value="Apple TV+">Apple TV+</option>
-                  <option value="Max">Max</option>
+
+                  {serviceOptions.map((service) => (
+                    <option key={service} value={service}>
+                      {service}
+                    </option>
+                  ))}
                 </select>
 
                 <ChevronDown
@@ -466,30 +472,16 @@ function App() {
             />
           )}
         </main>
-
-        {/* Mobile bottom navigation */}
-        <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 border-t md:hidden">
-          <div className="grid grid-cols-3 items-center">
-            <button className="mobile-nav-active flex flex-col items-center gap-1 py-3 font-semibold">
-              <List size={22} />
-              <span className="text-xs">My List</span>
-            </button>
-
-            <button
-              onClick={() => setIsAddOpen(true)}
-              className="btn-primary mx-auto flex h-12 w-12 items-center justify-center rounded-full"
-              aria-label="Add show"
-            >
-              <Plus size={24} />
-            </button>
-
-            <button className="nav-item flex flex-col items-center gap-1 py-3">
-              <Layers size={22} />
-              <span className="text-xs">Services</span>
-            </button>
-          </div>
-        </nav>
       </div>
+
+      {/* Mobile add button */}
+      <button
+        onClick={() => setIsAddOpen(true)}
+        className="btn-primary fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg md:hidden"
+        aria-label="Add show"
+      >
+        <Plus size={26} />
+      </button>
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (

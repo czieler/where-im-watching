@@ -10,6 +10,7 @@ import type { NewShow, Show, ShowStatus } from "../types/show";
 import useShowSearch from "../hooks/useShowSearch";
 import type { TVMazeShow } from "../services/tvmaze";
 import PrettySelect from "./PrettySelect";
+import ServiceCombobox from "./ServiceCombobox";
 
 type AddShowModalProps = {
   show?: Show;
@@ -216,18 +217,7 @@ function AddShowModal({ show, onClose, onSave }: AddShowModalProps) {
           </div>
 
           <div className="mt-4">
-            <PrettySelect
-              id="show-service"
-              label="Streaming Service"
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-            >
-              <option value="Hulu">Hulu</option>
-              <option value="Netflix">Netflix</option>
-              <option value="Paramount+">Paramount+</option>
-              <option value="Apple TV+">Apple TV+</option>
-              <option value="Max">Max</option>
-            </PrettySelect>
+            <ServiceCombobox value={service} onChange={setService} />
           </div>
         </div>
 
