@@ -34,6 +34,18 @@ type GuestWatchlist = {
   onHold: Show[];
 };
 
+type UserShowRow = {
+  user_id: string;
+  show_id: number;
+  title: string;
+  service: string;
+  status: string;
+  image_url: string | null;
+  season: number | null;
+  episode: number | null;
+  created_at: string;
+};
+
 const GUEST_WATCHLIST_KEY = "guestWatchlist";
 
 const themes: { value: Theme; label: string }[] = [
@@ -44,6 +56,9 @@ const themes: { value: Theme; label: string }[] = [
 
 function App() {
   const [isGuestWatchlistLoaded, setIsGuestWatchlistLoaded] = useState(false);
+  const [isAccountWatchlistLoaded, setIsAccountWatchlistLoaded] =
+    useState(false);
+  const [accountWatchlistError, setAccountWatchlistError] = useState("");
   const [appMode, setAppMode] = useState<AppMode>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -197,17 +212,8 @@ function App() {
 
     localStorage.removeItem(GUEST_WATCHLIST_KEY);
   };
-  const handleAddShow = ({
-    id,
-    title,
-    service,
-    status,
-    imageUrl,
-    season,
-    episode,
-  }: NewShow) => {
-    const show = { id, title, service, imageUrl, season, episode };
 
+  const addShowToState = (show: Show, status: ShowStatus) => {
     switch (status) {
       case "watching":
         setWatching((current) => [...current, show]);
@@ -225,39 +231,109 @@ function App() {
         setOnHold((current) => [...current, show]);
         break;
     }
+  };
 
+  const removeShowFromState = (id: number) => {
+    setWatching((current) => current.filter((show) => show.id !== id));
+    setWantToWatch((current) => current.filter((show) => show.id !== id));
+    setCompleted((current) => current.filter((show) => show.id !== id));
+    setOnHold((current) => current.filter((show) => show.id !== id));
+  };
+
+  const handleAddShow = async ({
+    id,
+    title,
+    service,
+    status,
+    imageUrl,
+    season,
+    episode,
+  }: NewShow) => {
+    const show = { id, title, service, imageUrl, season, episode };
+
+    if (appMode === "account" && user) {
+      const { error } = await supabase.from("user_shows").insert({
+        user_id: user.id,
+        show_id: id,
+        title,
+        service,
+        status,
+        image_url: imageUrl ?? null,
+        season: season ?? null,
+        episode: episode ?? null,
+      });
+
+      if (error) {
+        setAccountWatchlistError(
+          error.code === "23505"
+            ? "That show is already in your list."
+            : "Unable to save show.",
+        );
+        return;
+      }
+
+      setAccountWatchlistError("");
+    }
+
+    addShowToState(show, status);
     setIsAddOpen(false);
   };
 
-  const handleEditShow = (updatedShow: NewShow) => {
-    setWatching((current) =>
-      current.filter((show) => show.id !== updatedShow.id),
-    );
+  const handleEditShow = async (updatedShow: NewShow) => {
+    if (appMode === "account" && user) {
+      const { error } = await supabase
+        .from("user_shows")
+        .update({
+          title: updatedShow.title,
+          service: updatedShow.service,
+          status: updatedShow.status,
+          image_url: updatedShow.imageUrl ?? null,
+          season: updatedShow.season ?? null,
+          episode: updatedShow.episode ?? null,
+        })
+        .eq("user_id", user.id)
+        .eq("show_id", updatedShow.id);
 
-    setWantToWatch((current) =>
-      current.filter((show) => show.id !== updatedShow.id),
-    );
+      if (error) {
+        setAccountWatchlistError("Unable to save show changes.");
+        return;
+      }
 
-    setCompleted((current) =>
-      current.filter((show) => show.id !== updatedShow.id),
-    );
+      setAccountWatchlistError("");
+    }
 
-    setOnHold((current) =>
-      current.filter((show) => show.id !== updatedShow.id),
+    removeShowFromState(updatedShow.id);
+    addShowToState(
+      {
+        id: updatedShow.id,
+        title: updatedShow.title,
+        service: updatedShow.service,
+        imageUrl: updatedShow.imageUrl,
+        season: updatedShow.season,
+        episode: updatedShow.episode,
+      },
+      updatedShow.status,
     );
-
-    handleAddShow(updatedShow);
     setShowToEdit(null);
   };
 
-  const handleRemoveShow = (id: number) => {
-    setWatching((current) => current.filter((show) => show.id !== id));
+  const handleRemoveShow = async (id: number) => {
+    if (appMode === "account" && user) {
+      const { error } = await supabase
+        .from("user_shows")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("show_id", id);
 
-    setWantToWatch((current) => current.filter((show) => show.id !== id));
+      if (error) {
+        setAccountWatchlistError("Unable to remove show.");
+        return;
+      }
 
-    setCompleted((current) => current.filter((show) => show.id !== id));
+      setAccountWatchlistError("");
+    }
 
-    setOnHold((current) => current.filter((show) => show.id !== id));
+    removeShowFromState(id);
   };
 
   const handleSignOut = async () => {
@@ -294,6 +370,13 @@ function App() {
 
       if (data.session) {
         setUser(data.session.user);
+        setIsGuestWatchlistLoaded(false);
+        setWatching([]);
+        setWantToWatch([]);
+        setCompleted([]);
+        setOnHold([]);
+        setIsAccountWatchlistLoaded(false);
+        setAccountWatchlistError("");
         setAppMode("account");
         return;
       }
@@ -317,6 +400,13 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser(session.user);
+        setIsGuestWatchlistLoaded(false);
+        setWatching([]);
+        setWantToWatch([]);
+        setCompleted([]);
+        setOnHold([]);
+        setIsAccountWatchlistLoaded(false);
+        setAccountWatchlistError("");
         localStorage.removeItem("guestMode");
         setAppMode("account");
       } else {
@@ -377,6 +467,59 @@ function App() {
     completed,
     onHold,
   ]);
+
+  useEffect(() => {
+    if (appMode !== "account" || !user) {
+      return;
+    }
+
+    const loadAccountWatchlist = async () => {
+      const { data, error } = await supabase
+        .from("user_shows")
+        .select(
+          "user_id, show_id, title, service, status, image_url, season, episode, created_at",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        setAccountWatchlistError("Unable to load your watchlist.");
+        setIsAccountWatchlistLoaded(true);
+        return;
+      }
+
+      const showsByStatus: Record<ShowStatus, Show[]> = {
+        watching: [],
+        wantToWatch: [],
+        completed: [],
+        onHold: [],
+      };
+
+      (data as UserShowRow[]).forEach((row) => {
+        if (!(row.status in showsByStatus)) {
+          return;
+        }
+
+        showsByStatus[row.status as ShowStatus].push({
+          id: row.show_id,
+          title: row.title,
+          service: row.service,
+          ...(row.image_url ? { imageUrl: row.image_url } : {}),
+          ...(row.season !== null ? { season: row.season } : {}),
+          ...(row.episode !== null ? { episode: row.episode } : {}),
+        });
+      });
+
+      setWatching(showsByStatus.watching);
+      setWantToWatch(showsByStatus.wantToWatch);
+      setCompleted(showsByStatus.completed);
+      setOnHold(showsByStatus.onHold);
+      setAccountWatchlistError("");
+      setIsAccountWatchlistLoaded(true);
+    };
+
+    loadAccountWatchlist();
+  }, [appMode, user]);
 
   if (appMode === "loading") {
     return null;
@@ -589,7 +732,17 @@ function App() {
 
         {currentPage === "list" && (
           <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
-            <div className="mb-6 flex flex-col gap-3 lg:flex-row">
+            {appMode === "account" && !isAccountWatchlistLoaded ? (
+              <p role="status">Loading your watchlist...</p>
+            ) : (
+              <>
+                {accountWatchlistError && (
+                  <p role="alert" className="mb-4 text-sm">
+                    {accountWatchlistError}
+                  </p>
+                )}
+
+                <div className="mb-6 flex flex-col gap-3 lg:flex-row">
               <div className="relative flex-1">
                 <Search
                   size={18}
@@ -675,9 +828,9 @@ function App() {
               >
                 + Add
               </button>
-            </div>
+              </div>
 
-            {(selectedStatus === "all" || selectedStatus === "watching") && (
+              {(selectedStatus === "all" || selectedStatus === "watching") && (
               <ShowList
                 title="Currently Watching"
                 shows={filteredWatching}
@@ -687,7 +840,7 @@ function App() {
               />
             )}
 
-            {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
+              {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
               <ShowList
                 title="Want to Watch"
                 shows={filteredWantToWatch}
@@ -699,7 +852,7 @@ function App() {
               />
             )}
 
-            {(selectedStatus === "all" || selectedStatus === "completed") && (
+              {(selectedStatus === "all" || selectedStatus === "completed") && (
               <ShowList
                 title="Completed"
                 shows={filteredCompleted}
@@ -710,7 +863,7 @@ function App() {
               />
             )}
 
-            {(selectedStatus === "all" || selectedStatus === "onHold") && (
+              {(selectedStatus === "all" || selectedStatus === "onHold") && (
               <ShowList
                 title="On Hold"
                 shows={filteredOnHold}
@@ -719,6 +872,8 @@ function App() {
                 onEdit={(show) => setShowToEdit({ show, status: "onHold" })}
                 onRemove={handleRemoveShow}
               />
+                )}
+              </>
             )}
           </main>
         )}
