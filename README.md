@@ -1,6 +1,6 @@
 # Where I'm Watching
 
-A responsive web app for keeping track of TV shows and movies across streaming services.
+A responsive web app for keeping track of TV shows across streaming services.
 
 ![Where I'm Watching application screenshots](src/assets/readme-screens.png)
 
@@ -18,7 +18,7 @@ This is also a personal learning project I'm using to expand my front-end experi
 
 🚧 **Work in progress**
 
-The responsive application shell and core watchlist interactions are in place. The project currently uses sample watchlist data while persistent storage and authentication are being developed.
+The responsive application shell, core watchlist interactions, and authentication flow are in place. The project currently uses sample watchlist data while guest and account-based persistence are being developed.
 
 Current functionality includes:
 
@@ -46,12 +46,22 @@ Current functionality includes:
 - Streaming-service filters automatically derived from services currently used in the watchlist
 - Reusable confirmation modal for destructive actions
 - Reusable styled form controls and comboboxes
+- Supabase authentication
+- User sign up and sign in
+- Email confirmation for new accounts
+- Forgot-password workflow
+- Guest mode without requiring an account
+- Sign out and returning-user sign in
+- Account navigation with Profile, Help & Feedback, and Privacy & Data
+- Guest-mode messaging explaining local-only storage and account benefits
+- Theme-aware Coming Soon experience for features still in development
 
 ## Tech Stack
 
 - React
 - TypeScript
 - Vite
+- Supabase
 - Tailwind CSS
 - SCSS
 - CSS custom properties
@@ -65,7 +75,7 @@ Current functionality includes:
 
 Reusable React components are used for application UI and repeated interaction patterns.
 
-Common controls and interaction patterns are extracted into reusable components rather than duplicating markup and behavior throughout the application. Examples include show lists, styled selects, service selection, Add/Edit Show workflows, and a configurable confirmation modal.
+Common controls and interaction patterns are extracted into reusable components rather than duplicating markup and behavior throughout the application. Examples include show lists, styled selects, service selection, Add/Edit Show workflows, account navigation, confirmation dialogs, and a configurable Coming Soon experience.
 
 ### Theming
 
@@ -74,6 +84,8 @@ The application uses CSS custom properties to keep theme styling separate from c
 Components use semantic CSS classes while each theme defines its own colors for backgrounds, surfaces, text, borders, accents, and interactive states.
 
 The selected theme is stored in `localStorage`, allowing the preference to persist between browser sessions.
+
+Theme-aware assets can also adapt to the selected application theme rather than relying on the operating system's color preference.
 
 ### TV Show Search
 
@@ -109,41 +121,53 @@ Watchlist changes use immutable React state updates rather than directly modifyi
 
 Editing a show's status removes it from its previous status collection and adds the updated entry to the appropriate collection, allowing the UI to respond directly to the updated application state.
 
+### Guest and Account Modes
+
+The application supports both guest and authenticated usage.
+
+Guest users can explore the application without creating an account. Guest watchlist data will be persisted locally in the browser, while authenticated users will use Supabase-backed storage for cross-device access.
+
+Authentication state is kept separate from watchlist behavior so the same application UI can support both modes without maintaining separate guest and signed-in versions of the application.
+
+Account-related navigation is isolated into reusable components and only receives the account-specific state and navigation information it requires.
+
+### Authentication
+
+Authentication is implemented using Supabase Auth.
+
+The application supports account creation, email confirmation, sign in, sign out, password recovery, and persistent authenticated sessions.
+
+Guest mode is maintained separately from Supabase authentication so users can use the application without creating an account and later choose to sign in or create one.
+
 ## Planned Features
 
-### Authentication & Guest Mode
+### Guest & Account Data Persistence
 
-Authentication UX has been designed and is planned for an upcoming development phase.
+Supabase has been integrated for authentication. Watchlist persistence is the next development phase.
 
 Planned functionality includes:
 
-- User sign up and sign in
-- Forgot-password workflow
-- Continue as guest without requiring an account
-- Local persistence for guest watchlists
-- Clear messaging that guest data is stored in the browser and may be lost if browser/site data is cleared
-- Ability for a guest to create an account later without losing their existing watchlist
-- Cross-device syncing for signed-in users
-- Loading, validation, and authentication error states
-
-The authentication screens shown in the project image are **design concepts and have not yet been implemented**.
-
-### Persistent Data
-
-- Supabase integration for authentication and persistent storage
-- Persistent user watchlists
+- Local persistence for guest watchlists using `localStorage`
+- Supabase-backed watchlists for signed-in users
+- Migration of an existing guest watchlist when creating an account
+- Cross-device watchlist syncing for authenticated users
 - Store user preferences
 - Save theme preferences to the user's profile
-- Database-backed watchlist data
 - Shared show metadata and artwork references
 - Cache show information to reduce unnecessary API requests
 - Periodically refresh cached metadata when appropriate
+
+### Account & Privacy
+
+- Download or export account data
+- Secure account deletion
+- Additional authentication validation and error handling
+- Customized authentication email branding using a transactional email provider
 
 ### Show Tracking
 
 - Update watching progress
 - Track seasons and episodes
-- Additional movie-specific metadata and workflows
 
 ### Streaming Services
 
@@ -151,8 +175,9 @@ The authentication screens shown in the project image are **design concepts and 
 - Remember custom service names for future selection
 - Continue deriving filtering options from services actually used in the watchlist
 
-### Future Ideas
+### Possible Future Features
 
+- Movie tracking in addition to TV shows
 - New-season notifications for tracked shows
 - Optional paid notifications without requiring a subscription
 - Family or group shared watchlists

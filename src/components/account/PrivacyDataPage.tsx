@@ -24,7 +24,7 @@ function PrivacyDataPage({ isGuest, theme, onSignIn }: PrivacyDataPageProps) {
   const [privacyView, setPrivacyView] = useState<PrivacyView>("main");
 
   const handleClearGuestData = () => {
-    localStorage.removeItem("guestShows");
+    localStorage.removeItem("guestWatchlist");
     setGuestDataCleared(true);
   };
 

@@ -27,6 +27,14 @@ import {
 
 type Page = "list" | "profile" | "help" | "privacy";
 type AppMode = "loading" | "auth" | "guest" | "account";
+type GuestWatchlist = {
+  watching: Show[];
+  wantToWatch: Show[];
+  completed: Show[];
+  onHold: Show[];
+};
+
+const GUEST_WATCHLIST_KEY = "guestWatchlist";
 
 const themes: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
@@ -35,6 +43,7 @@ const themes: { value: Theme; label: string }[] = [
 ];
 
 function App() {
+  const [isGuestWatchlistLoaded, setIsGuestWatchlistLoaded] = useState(false);
   const [appMode, setAppMode] = useState<AppMode>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -304,6 +313,47 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (appMode !== "guest" || isGuestWatchlistLoaded) {
+      return;
+    }
+
+    const savedWatchlist = localStorage.getItem(GUEST_WATCHLIST_KEY);
+
+    if (savedWatchlist) {
+      const guestWatchlist: GuestWatchlist = JSON.parse(savedWatchlist);
+
+      setWatching(guestWatchlist.watching);
+      setWantToWatch(guestWatchlist.wantToWatch);
+      setCompleted(guestWatchlist.completed);
+      setOnHold(guestWatchlist.onHold);
+    }
+
+    setIsGuestWatchlistLoaded(true);
+  }, [appMode, isGuestWatchlistLoaded]);
+
+  useEffect(() => {
+    if (appMode !== "guest" || !isGuestWatchlistLoaded) {
+      return;
+    }
+
+    const guestWatchlist: GuestWatchlist = {
+      watching,
+      wantToWatch,
+      completed,
+      onHold,
+    };
+
+    localStorage.setItem(GUEST_WATCHLIST_KEY, JSON.stringify(guestWatchlist));
+  }, [
+    appMode,
+    isGuestWatchlistLoaded,
+    watching,
+    wantToWatch,
+    completed,
+    onHold,
+  ]);
 
   if (appMode === "loading") {
     return null;
