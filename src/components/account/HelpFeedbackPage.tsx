@@ -50,8 +50,8 @@ function HelpFeedbackPage() {
 
   if (helpView === "faq") {
     return (
-      <PageContainer>
-        <BackButton onClick={goBack} />
+      <HelpPageContainer>
+        <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Answers to common questions about Where I'm Watching.
@@ -86,14 +86,14 @@ function HelpFeedbackPage() {
             );
           })}
         </div>
-      </PageContainer>
+      </HelpPageContainer>
     );
   }
 
   if (helpView === "bug") {
     return (
-      <PageContainer>
-        <BackButton onClick={goBack} />
+      <HelpPageContainer>
+        <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Tell us what went wrong so we can fix it.
@@ -137,14 +137,14 @@ function HelpFeedbackPage() {
 
           <FormActions submitLabel="Submit Bug Report" onCancel={goBack} />
         </form>
-      </PageContainer>
+      </HelpPageContainer>
     );
   }
 
   if (helpView === "feature") {
     return (
-      <PageContainer>
-        <BackButton onClick={goBack} />
+      <HelpPageContainer>
+        <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Have an idea that would make Where I'm Watching better?
@@ -180,14 +180,14 @@ function HelpFeedbackPage() {
 
           <FormActions submitLabel="Submit Feature Request" onCancel={goBack} />
         </form>
-      </PageContainer>
+      </HelpPageContainer>
     );
   }
 
   if (helpView === "feedback") {
     return (
-      <PageContainer>
-        <BackButton onClick={goBack} />
+      <HelpPageContainer>
+        <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Tell us what you like, what you don't, or what we could do better.
@@ -210,12 +210,12 @@ function HelpFeedbackPage() {
 
           <FormActions submitLabel="Submit Feedback" onCancel={goBack} />
         </form>
-      </PageContainer>
+      </HelpPageContainer>
     );
   }
 
   return (
-    <PageContainer>
+    <HelpPageContainer>
       <p className="mb-7 opacity-70">
         Need help, found a problem, or have an idea?
       </p>
@@ -253,15 +253,15 @@ function HelpFeedbackPage() {
       <div className="mt-8 border-t pt-5 text-sm opacity-50">
         Where I'm Watching · Version 0.1.0
       </div>
-    </PageContainer>
+    </HelpPageContainer>
   );
 }
 
-type PageContainerProps = {
+type HelpPageContainerProps = {
   children: React.ReactNode;
 };
 
-function PageContainer({ children }: PageContainerProps) {
+function HelpPageContainer({ children }: HelpPageContainerProps) {
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 sm:px-6">
       <div className="max-w-4xl">{children}</div>
@@ -270,17 +270,18 @@ function PageContainer({ children }: PageContainerProps) {
 }
 
 type BackButtonProps = {
+  label: string;
   onClick: () => void;
 };
 
-function BackButton({ onClick }: BackButtonProps) {
+function BackButton({ label, onClick }: BackButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="mb-4 text-sm font-medium opacity-70 hover:opacity-100"
     >
-      ← Back to Help & Feedback
+      ← {label}
     </button>
   );
 }
