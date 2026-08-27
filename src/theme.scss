@@ -158,6 +158,18 @@
      INPUTS / SELECTS
      ======================================================== */
 
+  /* ==========================================================
+   REQUIRED FIELDS
+   ========================================================== */
+
+  .app-input:required,
+  .app-select:required {
+    border-bottom-color: var(--theme-accent);
+    border-bottom-width: 3px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
   .app-input,
   .app-select,
   .theme-select {

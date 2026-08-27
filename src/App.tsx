@@ -2,12 +2,17 @@ import { useState } from "react";
 import "./app.scss";
 import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
+import AuthScreen from "./components/AuthScreen";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
+import AccountMenu from "./components/account/AccountMenu";
+import ProfilePage from "./components/account/ProfilePage";
+import HelpFeedbackPage from "./components/account/HelpFeedbackPage";
+import PrivacyDataPage from "./components/account/PrivacyDataPage";
+import type { Page } from "./components/account/AccountMenu";
 import type { Show, NewShow } from "./types/show";
 import {
   List,
-  User,
   Palette,
   Menu,
   X,
@@ -32,6 +37,9 @@ function App() {
 
     return savedTheme ?? "light";
   });
+
+  const [currentPage, setCurrentPage] = useState<Page>("list");
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -126,6 +134,18 @@ function App() {
     setSelectedService("all");
   };
 
+  const selectPage = (page: Page) => {
+    setCurrentPage(page);
+
+    if (page === "list") {
+      setIsAccountOpen(false);
+    } else {
+      setIsAccountOpen(true);
+    }
+
+    setIsMobileMenuOpen(false);
+  };
+
   const filteredWatching = watching.filter(
     (show) =>
       show.title.toLowerCase().includes(searchText.toLowerCase()) &&
@@ -197,12 +217,30 @@ function App() {
 
   const handleRemoveShow = (id: number) => {
     setWatching((current) => current.filter((show) => show.id !== id));
+
     setWantToWatch((current) => current.filter((show) => show.id !== id));
+
     setCompleted((current) => current.filter((show) => show.id !== id));
+
     setOnHold((current) => current.filter((show) => show.id !== id));
   };
 
+  const pageTitle =
+    currentPage === "list"
+      ? "My List"
+      : currentPage === "profile"
+        ? "Profile"
+        : currentPage === "help"
+          ? "Help & Feedback"
+          : "Privacy & Data";
+
   return (
+    /*
+    <div className="app" data-theme={theme}>
+      <AuthScreen />
+    </div>
+    */
+
     <div className="app" data-theme={theme}>
       {/* Desktop sidebar */}
       <aside
@@ -225,25 +263,36 @@ function App() {
         </div>
 
         <nav className="flex flex-1 flex-col gap-2 p-4">
-          <a
-            href="#"
-            className="nav-item nav-item-active flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
+          <button
+            type="button"
+            onClick={() => selectPage("list")}
+            className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${
+              currentPage === "list" ? "nav-item-active" : ""
+            }`}
             title={isSidebarCollapsed ? "My List" : undefined}
           >
             <List className="h-5 w-5 shrink-0" />
+
             {!isSidebarCollapsed && <span>My List</span>}
-          </a>
+          </button>
+
+          <AccountMenu
+            currentPage={currentPage}
+            isOpen={isAccountOpen}
+            collapsed={isSidebarCollapsed}
+            onToggle={() => {
+              if (isSidebarCollapsed) {
+                setIsSidebarCollapsed(false);
+                setIsAccountOpen(true);
+                return;
+              }
+
+              setIsAccountOpen((current) => !current);
+            }}
+            onSelect={selectPage}
+          />
 
           <div className="mt-auto">
-            <a
-              href="#"
-              className="nav-item flex items-center gap-3 rounded-lg px-4 py-3 font-medium"
-              title={isSidebarCollapsed ? "Account" : undefined}
-            >
-              <User className="h-5 w-5 shrink-0" />
-              {!isSidebarCollapsed && <span>Account</span>}
-            </a>
-
             <div className="px-4 py-4">
               {isSidebarCollapsed ? (
                 <div className="relative">
@@ -321,13 +370,11 @@ function App() {
         </button>
       </aside>
 
-      {/* Everything to the right of the sidebar on desktop */}
       <div
         className={`min-h-screen transition-all duration-200 ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         }`}
       >
-        {/* Top bar */}
         <header className="app-header sticky top-0 z-30 border-b">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-4">
@@ -339,151 +386,158 @@ function App() {
                 <Menu size={24} />
               </button>
 
-              <h2 className="text-xl font-bold">My List</h2>
+              <h2 className="text-xl font-bold">{pageTitle}</h2>
             </div>
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
-          <div className="mb-6 flex flex-col gap-3 lg:flex-row">
-            <div className="relative flex-1">
-              <Search
-                size={18}
-                className="search-icon absolute left-3 top-1/2 -translate-y-1/2"
-              />
+        {currentPage === "list" && (
+          <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 pb-28 sm:px-6 md:pb-8">
+            <div className="mb-6 flex flex-col gap-3 lg:flex-row">
+              <div className="relative flex-1">
+                <Search
+                  size={18}
+                  className="search-icon absolute left-3 top-1/2 -translate-y-1/2"
+                />
 
-              <input
-                type="text"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search my list..."
-                className="app-input w-full rounded-lg border py-2.5 pl-10 pr-10 outline-none"
-              />
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Search my list..."
+                  className="app-input w-full rounded-lg border py-2.5 pl-10 pr-10 outline-none"
+                />
 
-              {searchText && (
+                {searchText && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchText("")}
+                    className="search-clear absolute right-3 top-1/2 -translate-y-1/2"
+                    aria-label="Clear search"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 lg:flex lg:gap-3">
+                <div className="relative">
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="watching">Watching</option>
+                    <option value="wantToWatch">Want to Watch</option>
+                    <option value="completed">Completed</option>
+                    <option value="onHold">On Hold</option>
+                  </select>
+
+                  <ChevronDown
+                    size={16}
+                    className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={selectedService}
+                    onChange={(e) => setSelectedService(e.target.value)}
+                    className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
+                  >
+                    <option value="all">All Services</option>
+
+                    {serviceOptions.map((service) => (
+                      <option key={service} value={service}>
+                        {service}
+                      </option>
+                    ))}
+                  </select>
+
+                  <ChevronDown
+                    size={16}
+                    className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                  />
+                </div>
+              </div>
+
+              {(searchText !== "" ||
+                selectedStatus !== "all" ||
+                selectedService !== "all") && (
                 <button
-                  type="button"
-                  onClick={() => setSearchText("")}
-                  className="search-clear absolute right-3 top-1/2 -translate-y-1/2"
-                  aria-label="Clear search"
+                  onClick={clearFilters}
+                  className="btn btn-default self-start whitespace-nowrap lg:self-center"
                 >
-                  <X size={18} />
+                  Clear All
                 </button>
               )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:flex lg:gap-3">
-              <div className="relative">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="watching">Watching</option>
-                  <option value="wantToWatch">Want to Watch</option>
-                  <option value="completed">Completed</option>
-                  <option value="onHold">On Hold</option>
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value)}
-                  className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
-                >
-                  <option value="all">All Services</option>
-
-                  {serviceOptions.map((service) => (
-                    <option key={service} value={service}>
-                      {service}
-                    </option>
-                  ))}
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                />
-              </div>
-            </div>
-
-            {(searchText !== "" ||
-              selectedStatus !== "all" ||
-              selectedService !== "all") && (
               <button
-                onClick={clearFilters}
-                className="btn btn-default self-start whitespace-nowrap lg:self-center"
+                onClick={() => setIsAddOpen(true)}
+                className="btn btn-primary hidden self-center whitespace-nowrap md:inline-flex"
               >
-                Clear All
+                + Add
               </button>
+            </div>
+
+            {(selectedStatus === "all" || selectedStatus === "watching") && (
+              <ShowList
+                title="Currently Watching"
+                shows={filteredWatching}
+                onEdit={setShowToEdit}
+                onRemove={handleRemoveShow}
+              />
             )}
 
-            <button
-              onClick={() => setIsAddOpen(true)}
-              className="btn btn-primary hidden self-center whitespace-nowrap md:inline-flex"
-            >
-              + Add
-            </button>
-          </div>
+            {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
+              <ShowList
+                title="Want to Watch"
+                shows={filteredWantToWatch}
+                onEdit={setShowToEdit}
+                onRemove={handleRemoveShow}
+              />
+            )}
 
-          {(selectedStatus === "all" || selectedStatus === "watching") && (
-            <ShowList
-              title="Currently Watching"
-              shows={filteredWatching}
-              onEdit={setShowToEdit}
-              onRemove={handleRemoveShow}
-            />
-          )}
+            {(selectedStatus === "all" || selectedStatus === "completed") && (
+              <ShowList
+                title="Completed"
+                shows={filteredCompleted}
+                defaultExpanded={false}
+                onEdit={setShowToEdit}
+                onRemove={handleRemoveShow}
+              />
+            )}
 
-          {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
-            <ShowList
-              title="Want to Watch"
-              shows={filteredWantToWatch}
-              onEdit={setShowToEdit}
-              onRemove={handleRemoveShow}
-            />
-          )}
+            {(selectedStatus === "all" || selectedStatus === "onHold") && (
+              <ShowList
+                title="On Hold"
+                shows={filteredOnHold}
+                defaultExpanded={false}
+                onEdit={setShowToEdit}
+                onRemove={handleRemoveShow}
+              />
+            )}
+          </main>
+        )}
 
-          {(selectedStatus === "all" || selectedStatus === "completed") && (
-            <ShowList
-              title="Completed"
-              shows={filteredCompleted}
-              defaultExpanded={false}
-              onEdit={setShowToEdit}
-              onRemove={handleRemoveShow}
-            />
-          )}
+        {currentPage === "profile" && <ProfilePage />}
 
-          {(selectedStatus === "all" || selectedStatus === "onHold") && (
-            <ShowList
-              title="On Hold"
-              shows={filteredOnHold}
-              defaultExpanded={false}
-              onEdit={setShowToEdit}
-              onRemove={handleRemoveShow}
-            />
-          )}
-        </main>
+        {currentPage === "help" && <HelpFeedbackPage />}
+
+        {currentPage === "privacy" && <PrivacyDataPage />}
       </div>
 
-      {/* Mobile add button */}
-      <button
-        onClick={() => setIsAddOpen(true)}
-        className="btn-primary fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg md:hidden"
-        aria-label="Add show"
-      >
-        <Plus size={26} />
-      </button>
+      {currentPage === "list" && (
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className="btn-primary fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg md:hidden"
+          aria-label="Add show"
+        >
+          <Plus size={26} />
+        </button>
+      )}
 
-      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
@@ -493,7 +547,7 @@ function App() {
 
           <aside className="mobile-menu absolute left-0 top-0 h-full w-72 p-6 shadow-lg">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Settings</h2>
+              <h2 className="text-lg font-bold">Where I'm Watching</h2>
 
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -503,13 +557,25 @@ function App() {
               </button>
             </div>
 
-            <a
-              href="#"
-              className="nav-item mb-6 flex items-center gap-3 rounded-lg font-medium"
+            <button
+              type="button"
+              onClick={() => selectPage("list")}
+              className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${
+                currentPage === "list" ? "nav-item-active" : ""
+              }`}
             >
-              <User className="h-5 w-5" />
-              <span>Account</span>
-            </a>
+              <List className="h-5 w-5" />
+              <span>My List</span>
+            </button>
+
+            <div className="mb-6">
+              <AccountMenu
+                currentPage={currentPage}
+                isOpen={isAccountOpen}
+                onToggle={() => setIsAccountOpen((current) => !current)}
+                onSelect={selectPage}
+              />
+            </div>
 
             <label htmlFor="mobile-theme" className="mb-2 block font-semibold">
               Theme
