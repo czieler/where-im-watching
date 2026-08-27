@@ -1,7 +1,7 @@
+import type { Theme } from "../types/theme";
+
 import comingSoonLight from "../assets/coming_soon_light.png";
 import comingSoonDark from "../assets/coming_soon_dark.png";
-
-type Theme = "light" | "dark" | "blue";
 
 type ComingSoonProps = {
   theme: Theme;

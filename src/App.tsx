@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "./lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 import "./app.scss";
 import "./theme.scss";
 import wiwLogo from "./assets/wiw_logo.png";
@@ -9,8 +11,9 @@ import AccountMenu from "./components/account/AccountMenu";
 import ProfilePage from "./components/account/ProfilePage";
 import HelpFeedbackPage from "./components/account/HelpFeedbackPage";
 import PrivacyDataPage from "./components/account/PrivacyDataPage";
-import type { Page } from "./components/account/AccountMenu";
+import type { AccountPage } from "./components/account/AccountMenu";
 import type { Show, NewShow } from "./types/show";
+import type { Theme } from "./types/theme";
 import {
   List,
   Palette,
@@ -19,9 +22,11 @@ import {
   Plus,
   Search,
   ChevronDown,
+  User as UserIcon,
 } from "lucide-react";
 
-type Theme = "light" | "dark" | "blues";
+type Page = "list" | "profile" | "help" | "privacy";
+type AppMode = "loading" | "auth" | "guest" | "account";
 
 const themes: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
@@ -30,6 +35,8 @@ const themes: { value: Theme; label: string }[] = [
 ];
 
 function App() {
+  const [appMode, setAppMode] = useState<AppMode>("loading");
+  const [user, setUser] = useState<User | null>(null);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   const [theme, setTheme] = useState<Theme>(() => {
@@ -225,6 +232,25 @@ function App() {
     setOnHold((current) => current.filter((show) => show.id !== id));
   };
 
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Error signing out:", error.message);
+      return;
+    }
+
+    localStorage.removeItem("guestMode");
+    setAppMode("auth");
+  };
+
+  const accountPage: AccountPage | null =
+    currentPage === "profile" ||
+    currentPage === "help" ||
+    currentPage === "privacy"
+      ? currentPage
+      : null;
+
   const pageTitle =
     currentPage === "list"
       ? "My List"
@@ -233,6 +259,73 @@ function App() {
         : currentPage === "help"
           ? "Help & Feedback"
           : "Privacy & Data";
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session) {
+        setUser(data.session.user);
+        setAppMode("account");
+        return;
+      }
+
+      setUser(null);
+
+      const isGuest = localStorage.getItem("guestMode") === "true";
+
+      if (isGuest) {
+        setAppMode("guest");
+        return;
+      }
+
+      setAppMode("auth");
+    };
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser(session.user);
+        localStorage.removeItem("guestMode");
+        setAppMode("account");
+      } else {
+        setUser(null);
+
+        const isGuest = localStorage.getItem("guestMode") === "true";
+
+        setAppMode(isGuest ? "guest" : "auth");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (appMode === "loading") {
+    return null;
+  }
+
+  if (appMode === "auth") {
+    return (
+      <div className="app" data-theme={theme}>
+        <AuthScreen
+          onGuestContinue={() => {
+            setUser(null);
+            localStorage.setItem("guestMode", "true");
+            setAppMode("guest");
+          }}
+          onAuthSuccess={() => {
+            localStorage.removeItem("guestMode");
+            setAppMode("account");
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     /*
@@ -277,19 +370,17 @@ function App() {
           </button>
 
           <AccountMenu
-            currentPage={currentPage}
+            currentPage={accountPage}
             isOpen={isAccountOpen}
+            isGuest={appMode === "guest"}
             collapsed={isSidebarCollapsed}
-            onToggle={() => {
-              if (isSidebarCollapsed) {
-                setIsSidebarCollapsed(false);
-                setIsAccountOpen(true);
-                return;
-              }
-
-              setIsAccountOpen((current) => !current);
-            }}
+            onToggle={() => setIsAccountOpen((current) => !current)}
             onSelect={selectPage}
+            onSignOut={handleSignOut}
+            onSignIn={() => {
+              localStorage.removeItem("guestMode");
+              setAppMode("auth");
+            }}
           />
 
           <div className="mt-auto">
@@ -354,6 +445,38 @@ function App() {
                     />
                   </div>
                 </>
+              )}
+
+              {appMode === "guest" && !isSidebarCollapsed && (
+                <div className="mt-4 rounded-xl border border-black/10 p-4 dark:border-white/10">
+                  <div className="flex items-center gap-3">
+                    <UserIcon className="h-5 w-5 shrink-0" />
+                    <div className="font-semibold">Guest Mode</div>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 opacity-70">
+                    You&apos;re browsing as a guest.
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 opacity-70">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.removeItem("guestMode");
+                        setAppMode("auth");
+                      }}
+                      className="auth-link font-semibold"
+                    >
+                      Sign up to sync your list
+                    </button>{" "}
+                    across devices and keep it from being lost if your browser
+                    data is cleared or you switch devices.
+                  </p>
+
+                  <p className="mt-3 text-xs leading-5 opacity-60">
+                    Your list is only stored in this browser.
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -521,11 +644,29 @@ function App() {
           </main>
         )}
 
-        {currentPage === "profile" && <ProfilePage />}
+        {currentPage === "profile" && (
+          <ProfilePage
+            user={user}
+            isGuest={appMode === "guest"}
+            onSignIn={() => {
+              localStorage.removeItem("guestMode");
+              setAppMode("auth");
+            }}
+          />
+        )}
 
         {currentPage === "help" && <HelpFeedbackPage />}
 
-        {currentPage === "privacy" && <PrivacyDataPage />}
+        {currentPage === "privacy" && (
+          <PrivacyDataPage
+            isGuest={appMode === "guest"}
+            theme={theme}
+            onSignIn={() => {
+              localStorage.removeItem("guestMode");
+              setAppMode("auth");
+            }}
+          />
+        )}
       </div>
 
       {currentPage === "list" && (
@@ -570,10 +711,16 @@ function App() {
 
             <div className="mb-6">
               <AccountMenu
-                currentPage={currentPage}
+                currentPage={accountPage}
                 isOpen={isAccountOpen}
+                isGuest={appMode === "guest"}
                 onToggle={() => setIsAccountOpen((current) => !current)}
                 onSelect={selectPage}
+                onSignOut={handleSignOut}
+                onSignIn={() => {
+                  localStorage.removeItem("guestMode");
+                  setAppMode("auth");
+                }}
               />
             </div>
 

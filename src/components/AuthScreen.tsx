@@ -1,15 +1,107 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import wiwLogo from "../assets/wiw_logo.png";
+import { supabase } from "../lib/supabaseClient";
 
 type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
-function AuthScreen() {
+type AuthScreenProps = {
+  onGuestContinue: () => void;
+  onAuthSuccess: () => void;
+};
+
+function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   const isSignUp = mode === "signUp";
   const isForgotPassword = mode === "forgotPassword";
+
+  const clearMessages = () => {
+    setMessage("");
+    setErrorMessage("");
+  };
+
+  const changeMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    clearMessages();
+    setPassword("");
+    setConfirmPassword("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    clearMessages();
+    setIsSubmitting(true);
+
+    try {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+        if (error) {
+          setErrorMessage(error.message);
+          return;
+        }
+
+        setMessage(
+          "If an account exists for that email, a password reset link has been sent.",
+        );
+
+        return;
+      }
+
+      if (isSignUp) {
+        if (password !== confirmPassword) {
+          setErrorMessage("Passwords do not match.");
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          return;
+        }
+
+        if (data.session) {
+          onAuthSuccess();
+          return;
+        }
+
+        setMessage(
+          "Account created. Check your email to confirm your account before signing in.",
+        );
+
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      onAuthSuccess();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="auth-page flex min-h-screen items-center justify-center px-4 py-8">
@@ -43,7 +135,7 @@ function AuthScreen() {
             <div className="mb-8 flex border-b">
               <button
                 type="button"
-                onClick={() => setMode("signIn")}
+                onClick={() => changeMode("signIn")}
                 className={`auth-tab flex-1 pb-3 font-semibold ${
                   mode === "signIn" ? "active" : ""
                 }`}
@@ -53,7 +145,7 @@ function AuthScreen() {
 
               <button
                 type="button"
-                onClick={() => setMode("signUp")}
+                onClick={() => changeMode("signUp")}
                 className={`auth-tab flex-1 pb-3 font-semibold ${
                   mode === "signUp" ? "active" : ""
                 }`}
@@ -62,6 +154,7 @@ function AuthScreen() {
               </button>
             </div>
           )}
+
           <h2 className="text-2xl font-bold">
             {isForgotPassword
               ? "Reset your password"
@@ -78,15 +171,19 @@ function AuthScreen() {
                 : "Sign in to continue to your watchlist."}
           </p>
 
-          <form className="mt-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-6" onSubmit={handleSubmit}>
             <div className="pretty-placeholder">
               <input
                 id="auth-email"
                 required
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="app-input border"
                 placeholder=" "
+                autoComplete="email"
               />
+
               <label htmlFor="auth-email">Email</label>
             </div>
 
@@ -96,8 +193,11 @@ function AuthScreen() {
                   id="auth-password"
                   required
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="app-input border pr-12"
                   placeholder=" "
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                 />
 
                 <label htmlFor="auth-password">Password</label>
@@ -113,15 +213,19 @@ function AuthScreen() {
               </div>
             )}
 
-            {isSignUp && !isForgotPassword && (
+            {isSignUp && (
               <div className="pretty-placeholder mt-4">
                 <input
                   required
                   id="auth-confirm-password"
                   type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="app-input border"
                   placeholder=" "
+                  autoComplete="new-password"
                 />
+
                 <label htmlFor="auth-confirm-password">Confirm Password</label>
               </div>
             )}
@@ -130,7 +234,7 @@ function AuthScreen() {
               <div className="mt-3 text-right">
                 <button
                   type="button"
-                  onClick={() => setMode("forgotPassword")}
+                  onClick={() => changeMode("forgotPassword")}
                   className="auth-link text-sm font-medium"
                 >
                   Forgot password?
@@ -138,12 +242,30 @@ function AuthScreen() {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary mt-6 w-full">
-              {isForgotPassword
-                ? "Send Reset Link"
-                : isSignUp
-                  ? "Create Account"
-                  : "Sign In"}
+            {errorMessage && (
+              <div className="mt-4 text-sm" role="alert">
+                {errorMessage}
+              </div>
+            )}
+
+            {message && (
+              <div className="mt-4 text-sm" role="status">
+                {message}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary mt-6 w-full"
+            >
+              {isSubmitting
+                ? "Please wait..."
+                : isForgotPassword
+                  ? "Send Reset Link"
+                  : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
             </button>
           </form>
 
@@ -155,7 +277,11 @@ function AuthScreen() {
                 <div className="auth-divider h-px flex-1" />
               </div>
 
-              <button type="button" className="btn btn-default w-full">
+              <button
+                type="button"
+                onClick={onGuestContinue}
+                className="btn btn-default w-full"
+              >
                 Continue as Guest
               </button>
 
@@ -168,7 +294,7 @@ function AuthScreen() {
           ) : (
             <button
               type="button"
-              onClick={() => setMode("signIn")}
+              onClick={() => changeMode("signIn")}
               className="auth-link mt-6 w-full text-center text-sm font-medium"
             >
               ← Back to Sign In
