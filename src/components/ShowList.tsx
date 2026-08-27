@@ -1,11 +1,12 @@
 import { ChevronUp, ChevronDown, ImageOff, Trash2, Pencil } from "lucide-react";
 import { useState } from "react";
-import type { Show } from "../types/show";
+import type { Show, ShowStatus } from "../types/show";
 import ConfirmModal from "./ConfirmModal";
 
 type ShowListProps = {
   title: string;
   shows: Show[];
+  status: ShowStatus;
   onEdit: (show: Show) => void;
   onRemove: (id: number) => void;
   defaultExpanded?: boolean;
@@ -14,6 +15,7 @@ type ShowListProps = {
 function ShowList({
   title,
   shows,
+  status,
   onEdit,
   onRemove,
   defaultExpanded = true,
@@ -65,6 +67,18 @@ function ShowList({
                     </div>
 
                     <div className="flex items-center gap-4">
+                      {(status === "watching" || status === "onHold") &&
+                        (show.season !== undefined ||
+                          show.episode !== undefined) && (
+                          <span className="text-muted text-sm font-medium">
+                            {show.season !== undefined && `S${show.season}`}
+                            {show.season !== undefined &&
+                              show.episode !== undefined &&
+                              " "}
+                            {show.episode !== undefined && `E${show.episode}`}
+                          </span>
+                        )}
+
                       <span className="text-muted text-sm font-medium">
                         {show.service}
                       </span>

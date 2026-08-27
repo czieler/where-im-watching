@@ -189,8 +189,16 @@ function App() {
       (selectedService === "all" || show.service === selectedService),
   );
 
-  const handleAddShow = ({ id, title, service, status, imageUrl }: NewShow) => {
-    const show = { id, title, service, imageUrl };
+  const handleAddShow = ({
+    id,
+    title,
+    service,
+    status,
+    imageUrl,
+    season,
+    episode,
+  }: NewShow) => {
+    const show = { id, title, service, imageUrl, season, episode };
 
     switch (status) {
       case "watching":
@@ -665,6 +673,7 @@ function App() {
               <ShowList
                 title="Currently Watching"
                 shows={filteredWatching}
+                status="watching"
                 onEdit={(show) => setShowToEdit({ show, status: "watching" })}
                 onRemove={handleRemoveShow}
               />
@@ -674,6 +683,7 @@ function App() {
               <ShowList
                 title="Want to Watch"
                 shows={filteredWantToWatch}
+                status="wantToWatch"
                 onEdit={(show) =>
                   setShowToEdit({ show, status: "wantToWatch" })
                 }
@@ -685,6 +695,7 @@ function App() {
               <ShowList
                 title="Completed"
                 shows={filteredCompleted}
+                status="completed"
                 defaultExpanded={false}
                 onEdit={(show) => setShowToEdit({ show, status: "completed" })}
                 onRemove={handleRemoveShow}
@@ -695,6 +706,7 @@ function App() {
               <ShowList
                 title="On Hold"
                 shows={filteredOnHold}
+                status="onHold"
                 defaultExpanded={false}
                 onEdit={(show) => setShowToEdit({ show, status: "onHold" })}
                 onRemove={handleRemoveShow}

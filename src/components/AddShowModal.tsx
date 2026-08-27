@@ -9,6 +9,7 @@ import { useState } from "react";
 import type { NewShow, Show, ShowStatus } from "../types/show";
 import useShowSearch from "../hooks/useShowSearch";
 import type { TVMazeShow } from "../services/tvmaze";
+import PrettyPlaceholderInput from "./PrettyPlaceholderInput";
 import PrettySelect from "./PrettySelect";
 import ServiceCombobox from "./ServiceCombobox";
 
@@ -29,6 +30,12 @@ function AddShowModal({
   const [status, setStatus] = useState<ShowStatus>(initialStatus);
 
   const [service, setService] = useState(show?.service ?? "Hulu");
+  const [season, setSeason] = useState(
+    show?.season === undefined ? "" : String(show.season),
+  );
+  const [episode, setEpisode] = useState(
+    show?.episode === undefined ? "" : String(show.episode),
+  );
 
   const [selectedShow, setSelectedShow] = useState<TVMazeShow | null>(null);
 
@@ -45,11 +52,16 @@ function AddShowModal({
   };
 
   const handleSubmit = () => {
+    const parseProgress = (value: string) =>
+      value === "" ? undefined : Number(value);
+
     if (show) {
       onSave({
         ...show,
         service,
         status,
+        season: parseProgress(season),
+        episode: parseProgress(episode),
       });
 
       return;
@@ -65,8 +77,12 @@ function AddShowModal({
       service,
       status,
       imageUrl: selectedShow.image?.medium,
+      season: parseProgress(season),
+      episode: parseProgress(episode),
     });
   };
+
+  const canEditProgress = status === "watching" || status === "onHold";
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
@@ -221,6 +237,32 @@ function AddShowModal({
               <option value="onHold">On Hold</option>
             </PrettySelect>
           </div>
+
+          {canEditProgress && (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <PrettyPlaceholderInput
+                id="show-season"
+                label="Season"
+                className="rounded-lg border"
+                type="number"
+                min="1"
+                step="1"
+                value={season}
+                onChange={(e) => setSeason(e.target.value)}
+              />
+
+              <PrettyPlaceholderInput
+                id="show-episode"
+                label="Episode"
+                className="rounded-lg border"
+                type="number"
+                min="1"
+                step="1"
+                value={episode}
+                onChange={(e) => setEpisode(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="mt-4">
             <ServiceCombobox value={service} onChange={setService} />
