@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import "./app.scss";
@@ -46,7 +46,49 @@ type UserShowRow = {
   created_at: string;
 };
 
+type UserShowInsert = Omit<UserShowRow, "created_at">;
+
 const GUEST_WATCHLIST_KEY = "guestWatchlist";
+
+function readGuestWatchlist(): GuestWatchlist | null {
+  try {
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem(GUEST_WATCHLIST_KEY) ?? "null",
+    );
+
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const guestWatchlist = parsed as Partial<GuestWatchlist>;
+
+    if (
+      !Array.isArray(guestWatchlist.watching) ||
+      !Array.isArray(guestWatchlist.wantToWatch) ||
+      !Array.isArray(guestWatchlist.completed) ||
+      !Array.isArray(guestWatchlist.onHold)
+    ) {
+      return null;
+    }
+
+    return guestWatchlist as GuestWatchlist;
+  } catch {
+    return null;
+  }
+}
+
+function hasGuestWatchlistShows() {
+  const guestWatchlist = readGuestWatchlist();
+
+  return guestWatchlist
+    ? [
+        guestWatchlist.watching,
+        guestWatchlist.wantToWatch,
+        guestWatchlist.completed,
+        guestWatchlist.onHold,
+      ].some((shows) => shows.length > 0)
+    : false;
+}
 
 const themes: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
@@ -56,12 +98,25 @@ const themes: { value: Theme; label: string }[] = [
 
 function App() {
   const [isGuestWatchlistLoaded, setIsGuestWatchlistLoaded] = useState(false);
+  const [shouldShowMigrationPrompt, setShouldShowMigrationPrompt] =
+    useState(false);
+  const [hasDismissedMigrationPrompt, setHasDismissedMigrationPrompt] =
+    useState(false);
+  const hasDismissedMigrationPromptRef = useRef(false);
+  const [isMigratingGuestWatchlist, setIsMigratingGuestWatchlist] =
+    useState(false);
+  const [migrationError, setMigrationError] = useState("");
   const [isAccountWatchlistLoaded, setIsAccountWatchlistLoaded] =
     useState(false);
   const [accountWatchlistError, setAccountWatchlistError] = useState("");
   const [appMode, setAppMode] = useState<AppMode>("loading");
   const [user, setUser] = useState<User | null>(null);
+  const appModeRef = useRef(appMode);
+  const userRef = useRef(user);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+
+  appModeRef.current = appMode;
+  userRef.current = user;
 
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
@@ -240,6 +295,68 @@ function App() {
     setOnHold((current) => current.filter((show) => show.id !== id));
   };
 
+  const toUserShowInsert = (
+    userId: string,
+    show: Show,
+    status: ShowStatus,
+  ): UserShowInsert => ({
+    user_id: userId,
+    show_id: show.id,
+    title: show.title,
+    service: show.service,
+    status,
+    image_url: show.imageUrl ?? null,
+    season: show.season ?? null,
+    episode: show.episode ?? null,
+  });
+
+  const loadAccountWatchlist = async (accountUserId: string) => {
+    setIsAccountWatchlistLoaded(false);
+
+    const { data, error } = await supabase
+      .from("user_shows")
+      .select(
+        "user_id, show_id, title, service, status, image_url, season, episode, created_at",
+      )
+      .eq("user_id", accountUserId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      setAccountWatchlistError("Unable to load your watchlist.");
+      setIsAccountWatchlistLoaded(true);
+      return;
+    }
+
+    const showsByStatus: Record<ShowStatus, Show[]> = {
+      watching: [],
+      wantToWatch: [],
+      completed: [],
+      onHold: [],
+    };
+
+    (data as UserShowRow[]).forEach((row) => {
+      if (!(row.status in showsByStatus)) {
+        return;
+      }
+
+      showsByStatus[row.status as ShowStatus].push({
+        id: row.show_id,
+        title: row.title,
+        service: row.service,
+        ...(row.image_url ? { imageUrl: row.image_url } : {}),
+        ...(row.season !== null ? { season: row.season } : {}),
+        ...(row.episode !== null ? { episode: row.episode } : {}),
+      });
+    });
+
+    setWatching(showsByStatus.watching);
+    setWantToWatch(showsByStatus.wantToWatch);
+    setCompleted(showsByStatus.completed);
+    setOnHold(showsByStatus.onHold);
+    setAccountWatchlistError("");
+    setIsAccountWatchlistLoaded(true);
+  };
+
   const handleAddShow = async ({
     id,
     title,
@@ -252,16 +369,9 @@ function App() {
     const show = { id, title, service, imageUrl, season, episode };
 
     if (appMode === "account" && user) {
-      const { error } = await supabase.from("user_shows").insert({
-        user_id: user.id,
-        show_id: id,
-        title,
-        service,
-        status,
-        image_url: imageUrl ?? null,
-        season: season ?? null,
-        episode: episode ?? null,
-      });
+      const { error } = await supabase
+        .from("user_shows")
+        .insert(toUserShowInsert(user.id, show, status));
 
       if (error) {
         setAccountWatchlistError(
@@ -336,6 +446,76 @@ function App() {
     removeShowFromState(id);
   };
 
+  const handleMigrateGuestWatchlist = async () => {
+    if (isMigratingGuestWatchlist) {
+      return;
+    }
+
+    setMigrationError("");
+
+    const guestWatchlist = readGuestWatchlist();
+
+    if (!guestWatchlist) {
+      setShouldShowMigrationPrompt(false);
+      return;
+    }
+
+    if (appMode !== "account" || !user) {
+      setMigrationError("Please sign in before bringing your list.");
+      return;
+    }
+
+    if (!isAccountWatchlistLoaded) {
+      setMigrationError("Your account list is still loading. Please try again.");
+      return;
+    }
+
+    setIsMigratingGuestWatchlist(true);
+
+    try {
+      const existingShowIds = new Set(
+        [...watching, ...wantToWatch, ...completed, ...onHold].map(
+          (show) => show.id,
+        ),
+      );
+      const showsToMigrate: UserShowInsert[] = [];
+      const guestShows: { show: Show; status: ShowStatus }[] = [
+        ...guestWatchlist.watching.map((show) => ({ show, status: "watching" as const })),
+        ...guestWatchlist.wantToWatch.map((show) => ({ show, status: "wantToWatch" as const })),
+        ...guestWatchlist.completed.map((show) => ({ show, status: "completed" as const })),
+        ...guestWatchlist.onHold.map((show) => ({ show, status: "onHold" as const })),
+      ];
+
+      guestShows.forEach(({ show, status }) => {
+        if (existingShowIds.has(show.id)) {
+          return;
+        }
+
+        existingShowIds.add(show.id);
+        showsToMigrate.push(toUserShowInsert(user.id, show, status));
+      });
+
+      if (showsToMigrate.length > 0) {
+        const { error } = await supabase
+          .from("user_shows")
+          .insert(showsToMigrate);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      localStorage.removeItem(GUEST_WATCHLIST_KEY);
+      setShouldShowMigrationPrompt(false);
+      await loadAccountWatchlist(user.id);
+    } catch (error) {
+      console.error("Unable to migrate guest watchlist:", error);
+      setMigrationError("Unable to bring your guest list right now.");
+    } finally {
+      setIsMigratingGuestWatchlist(false);
+    }
+  };
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
 
@@ -345,6 +525,9 @@ function App() {
     }
 
     localStorage.removeItem("guestMode");
+    hasDismissedMigrationPromptRef.current = false;
+    setHasDismissedMigrationPrompt(false);
+    setShouldShowMigrationPrompt(false);
     setAppMode("auth");
   };
 
@@ -370,6 +553,9 @@ function App() {
 
       if (data.session) {
         setUser(data.session.user);
+        if (!hasDismissedMigrationPromptRef.current) {
+          setShouldShowMigrationPrompt(hasGuestWatchlistShows());
+        }
         setIsGuestWatchlistLoaded(false);
         setWatching([]);
         setWantToWatch([]);
@@ -397,9 +583,41 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        return;
+      }
+
+      if (
+        event === "SIGNED_IN" &&
+        appModeRef.current === "account" &&
+        userRef.current &&
+        userRef.current.id === session?.user.id
+      ) {
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        hasDismissedMigrationPromptRef.current = false;
+        setHasDismissedMigrationPrompt(false);
+        setShouldShowMigrationPrompt(false);
+
+        const isGuest = localStorage.getItem("guestMode") === "true";
+
+        setAppMode(isGuest ? "guest" : "auth");
+        return;
+      }
+
+      if (event !== "SIGNED_IN") {
+        return;
+      }
+
       if (session) {
         setUser(session.user);
+        if (!hasDismissedMigrationPromptRef.current) {
+          setShouldShowMigrationPrompt(hasGuestWatchlistShows());
+        }
         setIsGuestWatchlistLoaded(false);
         setWatching([]);
         setWantToWatch([]);
@@ -409,12 +627,6 @@ function App() {
         setAccountWatchlistError("");
         localStorage.removeItem("guestMode");
         setAppMode("account");
-      } else {
-        setUser(null);
-
-        const isGuest = localStorage.getItem("guestMode") === "true";
-
-        setAppMode(isGuest ? "guest" : "auth");
       }
     });
 
@@ -473,52 +685,7 @@ function App() {
       return;
     }
 
-    const loadAccountWatchlist = async () => {
-      const { data, error } = await supabase
-        .from("user_shows")
-        .select(
-          "user_id, show_id, title, service, status, image_url, season, episode, created_at",
-        )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        setAccountWatchlistError("Unable to load your watchlist.");
-        setIsAccountWatchlistLoaded(true);
-        return;
-      }
-
-      const showsByStatus: Record<ShowStatus, Show[]> = {
-        watching: [],
-        wantToWatch: [],
-        completed: [],
-        onHold: [],
-      };
-
-      (data as UserShowRow[]).forEach((row) => {
-        if (!(row.status in showsByStatus)) {
-          return;
-        }
-
-        showsByStatus[row.status as ShowStatus].push({
-          id: row.show_id,
-          title: row.title,
-          service: row.service,
-          ...(row.image_url ? { imageUrl: row.image_url } : {}),
-          ...(row.season !== null ? { season: row.season } : {}),
-          ...(row.episode !== null ? { episode: row.episode } : {}),
-        });
-      });
-
-      setWatching(showsByStatus.watching);
-      setWantToWatch(showsByStatus.wantToWatch);
-      setCompleted(showsByStatus.completed);
-      setOnHold(showsByStatus.onHold);
-      setAccountWatchlistError("");
-      setIsAccountWatchlistLoaded(true);
-    };
-
-    loadAccountWatchlist();
+    loadAccountWatchlist(user.id);
   }, [appMode, user]);
 
   if (appMode === "loading") {
@@ -535,6 +702,9 @@ function App() {
             setAppMode("guest");
           }}
           onAuthSuccess={() => {
+            if (!hasDismissedMigrationPromptRef.current) {
+              setShouldShowMigrationPrompt(hasGuestWatchlistShows());
+            }
             localStorage.removeItem("guestMode");
             setAppMode("account");
           }}
@@ -594,7 +764,6 @@ function App() {
             onSelect={selectPage}
             onSignOut={handleSignOut}
             onSignIn={() => {
-              localStorage.removeItem("guestMode");
               setAppMode("auth");
             }}
           />
@@ -678,7 +847,6 @@ function App() {
                     <button
                       type="button"
                       onClick={() => {
-                        localStorage.removeItem("guestMode");
                         setAppMode("auth");
                       }}
                       className="auth-link font-semibold"
@@ -883,7 +1051,6 @@ function App() {
             user={user}
             isGuest={appMode === "guest"}
             onSignIn={() => {
-              localStorage.removeItem("guestMode");
               setAppMode("auth");
             }}
           />
@@ -896,7 +1063,6 @@ function App() {
             isGuest={appMode === "guest"}
             theme={theme}
             onSignIn={() => {
-              localStorage.removeItem("guestMode");
               setAppMode("auth");
             }}
             onClearGuestData={handleClearGuestData}
@@ -953,7 +1119,6 @@ function App() {
                 onSelect={selectPage}
                 onSignOut={handleSignOut}
                 onSignIn={() => {
-                  localStorage.removeItem("guestMode");
                   setAppMode("auth");
                 }}
               />
@@ -998,6 +1163,56 @@ function App() {
           onClose={() => setShowToEdit(null)}
           onSave={handleEditShow}
         />
+      )}
+
+      {appMode === "account" &&
+        shouldShowMigrationPrompt &&
+        !hasDismissedMigrationPrompt && (
+        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
+          <div className="modal w-full max-w-sm rounded-xl p-6 shadow-lg">
+            <h2 className="text-xl font-bold">
+              Bring your guest list with you?
+            </h2>
+
+            <p className="mt-4">
+              You have shows saved in Guest Mode. Would you like to add them to
+              your account so they&apos;re available when you sign in on other
+              devices?
+            </p>
+
+            {migrationError && (
+              <p role="alert" className="mt-4 text-sm">
+                {migrationError}
+              </p>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  hasDismissedMigrationPromptRef.current = true;
+                  setHasDismissedMigrationPrompt(true);
+                  setShouldShowMigrationPrompt(false);
+                }}
+                className="btn btn-default"
+                disabled={isMigratingGuestWatchlist}
+              >
+                Not Now
+              </button>
+
+              <button
+                type="button"
+                onClick={handleMigrateGuestWatchlist}
+                className="btn btn-primary"
+                disabled={isMigratingGuestWatchlist}
+              >
+                {isMigratingGuestWatchlist
+                  ? "Bringing Your List..."
+                  : "Bring My List"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
