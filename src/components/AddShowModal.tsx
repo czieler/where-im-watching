@@ -14,13 +14,19 @@ import ServiceCombobox from "./ServiceCombobox";
 
 type AddShowModalProps = {
   show?: Show;
+  initialStatus?: ShowStatus;
   onClose: () => void;
   onSave: (show: NewShow) => void;
 };
 
-function AddShowModal({ show, onClose, onSave }: AddShowModalProps) {
+function AddShowModal({
+  show,
+  initialStatus = "watching",
+  onClose,
+  onSave,
+}: AddShowModalProps) {
   const [title, setTitle] = useState(show?.title ?? "");
-  const [status, setStatus] = useState<ShowStatus>(show?.status ?? "watching");
+  const [status, setStatus] = useState<ShowStatus>(initialStatus);
 
   const [service, setService] = useState(show?.service ?? "Hulu");
 

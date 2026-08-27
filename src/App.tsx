@@ -12,7 +12,7 @@ import ProfilePage from "./components/account/ProfilePage";
 import HelpFeedbackPage from "./components/account/HelpFeedbackPage";
 import PrivacyDataPage from "./components/account/PrivacyDataPage";
 import type { AccountPage } from "./components/account/AccountMenu";
-import type { Show, NewShow } from "./types/show";
+import type { Show, NewShow, ShowStatus } from "./types/show";
 import type { Theme } from "./types/theme";
 import {
   List,
@@ -63,7 +63,10 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [showToEdit, setShowToEdit] = useState<Show | null>(null);
+  const [showToEdit, setShowToEdit] = useState<{
+    show: Show;
+    status: ShowStatus;
+  } | null>(null);
 
   const [watching, setWatching] = useState<Show[]>([
     {
@@ -322,12 +325,16 @@ function App() {
     const savedWatchlist = localStorage.getItem(GUEST_WATCHLIST_KEY);
 
     if (savedWatchlist) {
-      const guestWatchlist: GuestWatchlist = JSON.parse(savedWatchlist);
+      try {
+        const guestWatchlist: GuestWatchlist = JSON.parse(savedWatchlist);
 
-      setWatching(guestWatchlist.watching);
-      setWantToWatch(guestWatchlist.wantToWatch);
-      setCompleted(guestWatchlist.completed);
-      setOnHold(guestWatchlist.onHold);
+        setWatching(guestWatchlist.watching);
+        setWantToWatch(guestWatchlist.wantToWatch);
+        setCompleted(guestWatchlist.completed);
+        setOnHold(guestWatchlist.onHold);
+      } catch (error) {
+        console.error("Unable to restore guest watchlist:", error);
+      }
     }
 
     setIsGuestWatchlistLoaded(true);
@@ -658,7 +665,7 @@ function App() {
               <ShowList
                 title="Currently Watching"
                 shows={filteredWatching}
-                onEdit={setShowToEdit}
+                onEdit={(show) => setShowToEdit({ show, status: "watching" })}
                 onRemove={handleRemoveShow}
               />
             )}
@@ -667,7 +674,9 @@ function App() {
               <ShowList
                 title="Want to Watch"
                 shows={filteredWantToWatch}
-                onEdit={setShowToEdit}
+                onEdit={(show) =>
+                  setShowToEdit({ show, status: "wantToWatch" })
+                }
                 onRemove={handleRemoveShow}
               />
             )}
@@ -677,7 +686,7 @@ function App() {
                 title="Completed"
                 shows={filteredCompleted}
                 defaultExpanded={false}
-                onEdit={setShowToEdit}
+                onEdit={(show) => setShowToEdit({ show, status: "completed" })}
                 onRemove={handleRemoveShow}
               />
             )}
@@ -687,7 +696,7 @@ function App() {
                 title="On Hold"
                 shows={filteredOnHold}
                 defaultExpanded={false}
-                onEdit={setShowToEdit}
+                onEdit={(show) => setShowToEdit({ show, status: "onHold" })}
                 onRemove={handleRemoveShow}
               />
             )}
@@ -808,7 +817,8 @@ function App() {
 
       {showToEdit && (
         <AddShowModal
-          show={showToEdit}
+          show={showToEdit.show}
+          initialStatus={showToEdit.status}
           onClose={() => setShowToEdit(null)}
           onSave={handleEditShow}
         />
