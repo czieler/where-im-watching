@@ -16,16 +16,21 @@ type PrivacyDataPageProps = {
   isGuest: boolean;
   theme: Theme;
   onSignIn: () => void;
+  onClearGuestData: () => void;
 };
 
-function PrivacyDataPage({ isGuest, theme, onSignIn }: PrivacyDataPageProps) {
+function PrivacyDataPage({
+  isGuest,
+  theme,
+  onSignIn,
+  onClearGuestData,
+}: PrivacyDataPageProps) {
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [guestDataCleared, setGuestDataCleared] = useState(false);
   const [privacyView, setPrivacyView] = useState<PrivacyView>("main");
 
   const handleClearGuestData = () => {
-    localStorage.removeItem("guestWatchlist");
-    setGuestDataCleared(true);
+    onClearGuestData();
   };
 
   if (privacyView === "yourData") {

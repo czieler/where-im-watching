@@ -189,6 +189,14 @@ function App() {
       (selectedService === "all" || show.service === selectedService),
   );
 
+  const handleClearGuestData = () => {
+    setWatching([]);
+    setWantToWatch([]);
+    setCompleted([]);
+    setOnHold([]);
+
+    localStorage.removeItem(GUEST_WATCHLIST_KEY);
+  };
   const handleAddShow = ({
     id,
     title,
@@ -736,6 +744,7 @@ function App() {
               localStorage.removeItem("guestMode");
               setAppMode("auth");
             }}
+            onClearGuestData={handleClearGuestData}
           />
         )}
       </div>
