@@ -31,6 +31,7 @@ function PrivacyDataPage({
 
   const handleClearGuestData = () => {
     onClearGuestData();
+    setGuestDataCleared(true);
   };
 
   if (privacyView === "yourData") {

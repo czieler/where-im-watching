@@ -6,12 +6,11 @@ function useShowSearch(title: string) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
-  useEffect(() => {
-    const trimmedTitle = title.trim();
+  const trimmedTitle = title.trim();
+  const shouldSearch = trimmedTitle.length >= 2;
 
-    if (trimmedTitle.length < 2) {
-      setSearchResults([]);
-      setSearchError("");
+  useEffect(() => {
+    if (!shouldSearch) {
       return;
     }
 
@@ -32,12 +31,12 @@ function useShowSearch(title: string) {
     }, 400);
 
     return () => window.clearTimeout(timeoutId);
-  }, [title]);
+  }, [trimmedTitle, shouldSearch]);
 
   return {
-    searchResults,
-    isSearching,
-    searchError,
+    searchResults: shouldSearch ? searchResults : [],
+    isSearching: shouldSearch ? isSearching : false,
+    searchError: shouldSearch ? searchError : "",
   };
 }
 

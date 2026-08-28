@@ -1,33 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import "./app.scss";
 import "./theme.scss";
-import wiwLogo from "./assets/wiw_logo.png";
+import Sidebar from "./components/layout/Sidebar";
+import MobileMenu from "./components/layout/MobileMenu";
+import WatchlistFilters from "./components/watchlist/WatchlistFilters";
+import GuestMigrationPrompt from "./components/account/GuestMigrationPrompt";
 import AuthScreen from "./components/AuthScreen";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
-import AccountMenu from "./components/account/AccountMenu";
 import ProfilePage from "./components/account/ProfilePage";
 import HelpFeedbackPage from "./components/account/HelpFeedbackPage";
 import PrivacyDataPage from "./components/account/PrivacyDataPage";
 import type { AccountPage } from "./components/account/AccountMenu";
 import type { Show, NewShow, ShowStatus } from "./types/show";
 import type { Theme } from "./types/theme";
-import {
-  List,
-  Palette,
-  Menu,
-  X,
-  Plus,
-  Search,
-  ChevronDown,
-  User as UserIcon,
-} from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 
 type Page = "list" | "profile" | "help" | "privacy";
 type AppMode = "loading" | "auth" | "guest" | "account";
-type GuestWatchlist = {
+
+type WatchlistByStatus = {
   watching: Show[];
   wantToWatch: Show[];
   completed: Show[];
@@ -50,7 +44,14 @@ type UserShowInsert = Omit<UserShowRow, "created_at">;
 
 const GUEST_WATCHLIST_KEY = "guestWatchlist";
 
-function readGuestWatchlist(): GuestWatchlist | null {
+const pageTitles: Record<Page, string> = {
+  list: "My List",
+  profile: "Profile",
+  help: "Help & Feedback",
+  privacy: "Privacy & Data",
+};
+
+function readGuestWatchlist(): WatchlistByStatus | null {
   try {
     const parsed: unknown = JSON.parse(
       localStorage.getItem(GUEST_WATCHLIST_KEY) ?? "null",
@@ -60,7 +61,7 @@ function readGuestWatchlist(): GuestWatchlist | null {
       return null;
     }
 
-    const guestWatchlist = parsed as Partial<GuestWatchlist>;
+    const guestWatchlist = parsed as Partial<WatchlistByStatus>;
 
     if (
       !Array.isArray(guestWatchlist.watching) ||
@@ -71,7 +72,7 @@ function readGuestWatchlist(): GuestWatchlist | null {
       return null;
     }
 
-    return guestWatchlist as GuestWatchlist;
+    return guestWatchlist as WatchlistByStatus;
   } catch {
     return null;
   }
@@ -90,11 +91,45 @@ function hasGuestWatchlistShows() {
     : false;
 }
 
-const themes: { value: Theme; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "blues", label: "Blues" },
-];
+async function fetchAccountWatchlist(
+  accountUserId: string,
+): Promise<WatchlistByStatus> {
+  const { data, error } = await supabase
+    .from("user_shows")
+    .select(
+      "user_id, show_id, title, service, status, image_url, season, episode, created_at",
+    )
+    .eq("user_id", accountUserId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const showsByStatus: WatchlistByStatus = {
+    watching: [],
+    wantToWatch: [],
+    completed: [],
+    onHold: [],
+  };
+
+  (data as UserShowRow[]).forEach((row) => {
+    if (!(row.status in showsByStatus)) {
+      return;
+    }
+
+    showsByStatus[row.status as ShowStatus].push({
+      id: row.show_id,
+      title: row.title,
+      service: row.service,
+      ...(row.image_url ? { imageUrl: row.image_url } : {}),
+      ...(row.season !== null ? { season: row.season } : {}),
+      ...(row.episode !== null ? { episode: row.episode } : {}),
+    });
+  });
+
+  return showsByStatus;
+}
 
 function App() {
   const [isGuestWatchlistLoaded, setIsGuestWatchlistLoaded] = useState(false);
@@ -103,106 +138,51 @@ function App() {
   const [hasDismissedMigrationPrompt, setHasDismissedMigrationPrompt] =
     useState(false);
   const hasDismissedMigrationPromptRef = useRef(false);
+
   const [isMigratingGuestWatchlist, setIsMigratingGuestWatchlist] =
     useState(false);
   const [migrationError, setMigrationError] = useState("");
+
   const [isAccountWatchlistLoaded, setIsAccountWatchlistLoaded] =
     useState(false);
   const [accountWatchlistError, setAccountWatchlistError] = useState("");
+
   const [appMode, setAppMode] = useState<AppMode>("loading");
   const [user, setUser] = useState<User | null>(null);
   const appModeRef = useRef(appMode);
   const userRef = useRef(user);
+
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
-  appModeRef.current = appMode;
-  userRef.current = user;
+  useEffect(() => {
+    appModeRef.current = appMode;
+    userRef.current = user;
+  }, [appMode, user]);
 
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-
     return savedTheme ?? "light";
   });
 
   const [currentPage, setCurrentPage] = useState<Page>("list");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+
   const [showToEdit, setShowToEdit] = useState<{
     show: Show;
     status: ShowStatus;
   } | null>(null);
 
-  const [watching, setWatching] = useState<Show[]>([
-    {
-      id: 1,
-      title: "The Last of Us",
-      service: "Hulu",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/563/1409008.jpg",
-    },
-    {
-      id: 2,
-      title: "Slow Horses",
-      service: "Apple TV+",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/637/1593462.jpg",
-    },
-  ]);
-
-  const [wantToWatch, setWantToWatch] = useState<Show[]>([
-    {
-      id: 3,
-      title: "House of the Dragon",
-      service: "Max",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/627/1568449.jpg",
-    },
-    {
-      id: 4,
-      title: "Ted Lasso",
-      service: "Apple TV+",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/634/1585930.jpg",
-    },
-    {
-      id: 5,
-      title: "Only Murders in the Building",
-      service: "Hulu",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/586/1466415.jpg",
-    },
-  ]);
-
-  const [completed, setCompleted] = useState<Show[]>([
-    {
-      id: 6,
-      title: "Breaking Bad",
-      service: "Netflix",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/501/1253519.jpg",
-    },
-    {
-      id: 7,
-      title: "The Good Place",
-      service: "Netflix",
-      imageUrl:
-        "https://static.tvmaze.com/uploads/images/medium_portrait/395/989291.jpg",
-    },
-  ]);
-
-  const [onHold, setOnHold] = useState<Show[]>([
-    {
-      id: 8,
-      title: "Yellowjackets",
-      service: "Paramount+",
-    },
-  ]);
+  const [watching, setWatching] = useState<Show[]>([]);
+  const [wantToWatch, setWantToWatch] = useState<Show[]>([]);
+  const [completed, setCompleted] = useState<Show[]>([]);
+  const [onHold, setOnHold] = useState<Show[]>([]);
 
   const serviceOptions = Array.from(
     new Set(
@@ -225,46 +205,50 @@ function App() {
 
   const selectPage = (page: Page) => {
     setCurrentPage(page);
-
-    if (page === "list") {
-      setIsAccountOpen(false);
-    } else {
-      setIsAccountOpen(true);
-    }
-
+    setIsAccountOpen(page !== "list");
     setIsMobileMenuOpen(false);
   };
 
-  const filteredWatching = watching.filter(
-    (show) =>
-      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
-      (selectedService === "all" || show.service === selectedService),
-  );
+  const normalizedSearchText = searchText.toLowerCase();
 
-  const filteredWantToWatch = wantToWatch.filter(
-    (show) =>
-      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
-      (selectedService === "all" || show.service === selectedService),
-  );
+  const filterShows = (shows: Show[]) =>
+    shows.filter(
+      (show) =>
+        show.title.toLowerCase().includes(normalizedSearchText) &&
+        (selectedService === "all" || show.service === selectedService),
+    );
 
-  const filteredCompleted = completed.filter(
-    (show) =>
-      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
-      (selectedService === "all" || show.service === selectedService),
-  );
+  const filteredWatching = filterShows(watching);
+  const filteredWantToWatch = filterShows(wantToWatch);
+  const filteredCompleted = filterShows(completed);
+  const filteredOnHold = filterShows(onHold);
 
-  const filteredOnHold = onHold.filter(
-    (show) =>
-      show.title.toLowerCase().includes(searchText.toLowerCase()) &&
-      (selectedService === "all" || show.service === selectedService),
-  );
-
-  const handleClearGuestData = () => {
+  const clearWatchlistState = useCallback(() => {
     setWatching([]);
     setWantToWatch([]);
     setCompleted([]);
     setOnHold([]);
+  }, []);
 
+  const setWatchlistState = useCallback((watchlist: WatchlistByStatus) => {
+    setWatching(watchlist.watching);
+    setWantToWatch(watchlist.wantToWatch);
+    setCompleted(watchlist.completed);
+    setOnHold(watchlist.onHold);
+  }, []);
+
+  const loadGuestWatchlist = useCallback(() => {
+    const guestWatchlist = readGuestWatchlist();
+
+    if (guestWatchlist) {
+      setWatchlistState(guestWatchlist);
+    }
+
+    setIsGuestWatchlistLoaded(true);
+  }, [setWatchlistState]);
+
+  const handleClearGuestData = () => {
+    clearWatchlistState();
     localStorage.removeItem(GUEST_WATCHLIST_KEY);
   };
 
@@ -310,52 +294,21 @@ function App() {
     episode: show.episode ?? null,
   });
 
-  const loadAccountWatchlist = async (accountUserId: string) => {
-    setIsAccountWatchlistLoaded(false);
+  const loadAccountWatchlist = useCallback(
+    async (accountUserId: string) => {
+      try {
+        const watchlist = await fetchAccountWatchlist(accountUserId);
 
-    const { data, error } = await supabase
-      .from("user_shows")
-      .select(
-        "user_id, show_id, title, service, status, image_url, season, episode, created_at",
-      )
-      .eq("user_id", accountUserId)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      setAccountWatchlistError("Unable to load your watchlist.");
-      setIsAccountWatchlistLoaded(true);
-      return;
-    }
-
-    const showsByStatus: Record<ShowStatus, Show[]> = {
-      watching: [],
-      wantToWatch: [],
-      completed: [],
-      onHold: [],
-    };
-
-    (data as UserShowRow[]).forEach((row) => {
-      if (!(row.status in showsByStatus)) {
-        return;
+        setWatchlistState(watchlist);
+        setAccountWatchlistError("");
+      } catch {
+        setAccountWatchlistError("Unable to load your watchlist.");
+      } finally {
+        setIsAccountWatchlistLoaded(true);
       }
-
-      showsByStatus[row.status as ShowStatus].push({
-        id: row.show_id,
-        title: row.title,
-        service: row.service,
-        ...(row.image_url ? { imageUrl: row.image_url } : {}),
-        ...(row.season !== null ? { season: row.season } : {}),
-        ...(row.episode !== null ? { episode: row.episode } : {}),
-      });
-    });
-
-    setWatching(showsByStatus.watching);
-    setWantToWatch(showsByStatus.wantToWatch);
-    setCompleted(showsByStatus.completed);
-    setOnHold(showsByStatus.onHold);
-    setAccountWatchlistError("");
-    setIsAccountWatchlistLoaded(true);
-  };
+    },
+    [setWatchlistState],
+  );
 
   const handleAddShow = async ({
     id,
@@ -413,6 +366,7 @@ function App() {
     }
 
     removeShowFromState(updatedShow.id);
+
     addShowToState(
       {
         id: updatedShow.id,
@@ -424,6 +378,7 @@ function App() {
       },
       updatedShow.status,
     );
+
     setShowToEdit(null);
   };
 
@@ -466,7 +421,9 @@ function App() {
     }
 
     if (!isAccountWatchlistLoaded) {
-      setMigrationError("Your account list is still loading. Please try again.");
+      setMigrationError(
+        "Your account list is still loading. Please try again.",
+      );
       return;
     }
 
@@ -478,12 +435,26 @@ function App() {
           (show) => show.id,
         ),
       );
+
       const showsToMigrate: UserShowInsert[] = [];
+
       const guestShows: { show: Show; status: ShowStatus }[] = [
-        ...guestWatchlist.watching.map((show) => ({ show, status: "watching" as const })),
-        ...guestWatchlist.wantToWatch.map((show) => ({ show, status: "wantToWatch" as const })),
-        ...guestWatchlist.completed.map((show) => ({ show, status: "completed" as const })),
-        ...guestWatchlist.onHold.map((show) => ({ show, status: "onHold" as const })),
+        ...guestWatchlist.watching.map((show) => ({
+          show,
+          status: "watching" as const,
+        })),
+        ...guestWatchlist.wantToWatch.map((show) => ({
+          show,
+          status: "wantToWatch" as const,
+        })),
+        ...guestWatchlist.completed.map((show) => ({
+          show,
+          status: "completed" as const,
+        })),
+        ...guestWatchlist.onHold.map((show) => ({
+          show,
+          status: "onHold" as const,
+        })),
       ];
 
       guestShows.forEach(({ show, status }) => {
@@ -538,14 +509,7 @@ function App() {
       ? currentPage
       : null;
 
-  const pageTitle =
-    currentPage === "list"
-      ? "My List"
-      : currentPage === "profile"
-        ? "Profile"
-        : currentPage === "help"
-          ? "Help & Feedback"
-          : "Privacy & Data";
+  const pageTitle = pageTitles[currentPage];
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -553,14 +517,13 @@ function App() {
 
       if (data.session) {
         setUser(data.session.user);
+
         if (!hasDismissedMigrationPromptRef.current) {
           setShouldShowMigrationPrompt(hasGuestWatchlistShows());
         }
+
         setIsGuestWatchlistLoaded(false);
-        setWatching([]);
-        setWantToWatch([]);
-        setCompleted([]);
-        setOnHold([]);
+        clearWatchlistState();
         setIsAccountWatchlistLoaded(false);
         setAccountWatchlistError("");
         setAppMode("account");
@@ -572,6 +535,7 @@ function App() {
       const isGuest = localStorage.getItem("guestMode") === "true";
 
       if (isGuest) {
+        loadGuestWatchlist();
         setAppMode("guest");
         return;
       }
@@ -604,7 +568,6 @@ function App() {
         setShouldShowMigrationPrompt(false);
 
         const isGuest = localStorage.getItem("guestMode") === "true";
-
         setAppMode(isGuest ? "guest" : "auth");
         return;
       }
@@ -615,14 +578,13 @@ function App() {
 
       if (session) {
         setUser(session.user);
+
         if (!hasDismissedMigrationPromptRef.current) {
           setShouldShowMigrationPrompt(hasGuestWatchlistShows());
         }
+
         setIsGuestWatchlistLoaded(false);
-        setWatching([]);
-        setWantToWatch([]);
-        setCompleted([]);
-        setOnHold([]);
+        clearWatchlistState();
         setIsAccountWatchlistLoaded(false);
         setAccountWatchlistError("");
         localStorage.removeItem("guestMode");
@@ -633,37 +595,14 @@ function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    if (appMode !== "guest" || isGuestWatchlistLoaded) {
-      return;
-    }
-
-    const savedWatchlist = localStorage.getItem(GUEST_WATCHLIST_KEY);
-
-    if (savedWatchlist) {
-      try {
-        const guestWatchlist: GuestWatchlist = JSON.parse(savedWatchlist);
-
-        setWatching(guestWatchlist.watching);
-        setWantToWatch(guestWatchlist.wantToWatch);
-        setCompleted(guestWatchlist.completed);
-        setOnHold(guestWatchlist.onHold);
-      } catch (error) {
-        console.error("Unable to restore guest watchlist:", error);
-      }
-    }
-
-    setIsGuestWatchlistLoaded(true);
-  }, [appMode, isGuestWatchlistLoaded]);
+  }, [clearWatchlistState, loadGuestWatchlist]);
 
   useEffect(() => {
     if (appMode !== "guest" || !isGuestWatchlistLoaded) {
       return;
     }
 
-    const guestWatchlist: GuestWatchlist = {
+    const guestWatchlist: WatchlistByStatus = {
       watching,
       wantToWatch,
       completed,
@@ -685,8 +624,31 @@ function App() {
       return;
     }
 
-    loadAccountWatchlist(user.id);
-  }, [appMode, user]);
+    let cancelled = false;
+
+    fetchAccountWatchlist(user.id)
+      .then((watchlist) => {
+        if (cancelled) {
+          return;
+        }
+
+        setWatchlistState(watchlist);
+        setAccountWatchlistError("");
+        setIsAccountWatchlistLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setAccountWatchlistError("Unable to load your watchlist.");
+        setIsAccountWatchlistLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appMode, user, setWatchlistState]);
 
   if (appMode === "loading") {
     return null;
@@ -699,12 +661,14 @@ function App() {
           onGuestContinue={() => {
             setUser(null);
             localStorage.setItem("guestMode", "true");
+            loadGuestWatchlist();
             setAppMode("guest");
           }}
           onAuthSuccess={() => {
             if (!hasDismissedMigrationPromptRef.current) {
               setShouldShowMigrationPrompt(hasGuestWatchlistShows());
             }
+
             localStorage.removeItem("guestMode");
             setAppMode("account");
           }}
@@ -714,168 +678,24 @@ function App() {
   }
 
   return (
-    /*
     <div className="app" data-theme={theme}>
-      <AuthScreen />
-    </div>
-    */
-
-    <div className="app" data-theme={theme}>
-      {/* Desktop sidebar */}
-      <aside
-        className={`app-sidebar fixed inset-y-0 left-0 hidden border-r transition-all duration-200 md:flex md:flex-col ${
-          isSidebarCollapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <div className="app-sidebar-header border-b px-4 py-6">
-          <div className="flex items-center gap-3">
-            <img
-              src={wiwLogo}
-              alt="Where I'm Watching"
-              className="h-12 w-12 shrink-0 object-contain"
-            />
-
-            {!isSidebarCollapsed && (
-              <h1 className="text-xl font-bold">Where I'm Watching</h1>
-            )}
-          </div>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-2 p-4">
-          <button
-            type="button"
-            onClick={() => selectPage("list")}
-            className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${
-              currentPage === "list" ? "nav-item-active" : ""
-            }`}
-            title={isSidebarCollapsed ? "My List" : undefined}
-          >
-            <List className="h-5 w-5 shrink-0" />
-
-            {!isSidebarCollapsed && <span>My List</span>}
-          </button>
-
-          <AccountMenu
-            currentPage={accountPage}
-            isOpen={isAccountOpen}
-            isGuest={appMode === "guest"}
-            collapsed={isSidebarCollapsed}
-            onToggle={() => setIsAccountOpen((current) => !current)}
-            onSelect={selectPage}
-            onSignOut={handleSignOut}
-            onSignIn={() => {
-              setAppMode("auth");
-            }}
-          />
-
-          <div className="mt-auto">
-            <div className="px-4 py-4">
-              {isSidebarCollapsed ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-                    className="nav-item flex w-full items-center justify-center"
-                    title="Theme"
-                    aria-label="Theme"
-                    aria-expanded={isThemeMenuOpen}
-                  >
-                    <Palette className="h-5 w-5" />
-                  </button>
-
-                  {isThemeMenuOpen && (
-                    <div className="theme-mini-menu absolute bottom-0 left-full z-50 ml-4 w-36 overflow-hidden rounded-lg border shadow-lg">
-                      {themes.map((themeOption) => (
-                        <button
-                          key={themeOption.value}
-                          onClick={() => {
-                            handleThemeChange(themeOption.value);
-                            setIsThemeMenuOpen(false);
-                          }}
-                          className={`theme-mini-menu-item ${
-                            theme === themeOption.value ? "selected" : ""
-                          }`}
-                        >
-                          {themeOption.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <label
-                    htmlFor="theme"
-                    className="mb-2 block text-sm font-semibold"
-                  >
-                    Theme
-                  </label>
-
-                  <div className="relative">
-                    <select
-                      value={theme}
-                      onChange={(e) =>
-                        handleThemeChange(e.target.value as Theme)
-                      }
-                      id="theme"
-                      className="theme-select w-full appearance-none rounded-lg border px-3 py-2"
-                    >
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                      <option value="blues">Blues</option>
-                    </select>
-
-                    <ChevronDown
-                      size={16}
-                      className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                    />
-                  </div>
-                </>
-              )}
-
-              {appMode === "guest" && !isSidebarCollapsed && (
-                <div className="mt-4 rounded-xl border border-black/10 p-4 dark:border-white/10">
-                  <div className="flex items-center gap-3">
-                    <UserIcon className="h-5 w-5 shrink-0" />
-                    <div className="font-semibold">Guest Mode</div>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 opacity-70">
-                    You&apos;re browsing as a guest.
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 opacity-70">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAppMode("auth");
-                      }}
-                      className="auth-link font-semibold"
-                    >
-                      Sign up to sync your list
-                    </button>{" "}
-                    across devices and keep it from being lost if your browser
-                    data is cleared or you switch devices.
-                  </p>
-
-                  <p className="mt-3 text-xs leading-5 opacity-60">
-                    Your list is only stored in this browser.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </nav>
-
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="sidebar-toggle absolute top-1/2 -right-4 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm"
-          aria-label={
-            isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-          }
-        >
-          {isSidebarCollapsed ? "›" : "‹"}
-        </button>
-      </aside>
+      <Sidebar
+        currentPage={currentPage}
+        accountPage={accountPage}
+        isAccountOpen={isAccountOpen}
+        isGuest={appMode === "guest"}
+        isCollapsed={isSidebarCollapsed}
+        isThemeMenuOpen={isThemeMenuOpen}
+        theme={theme}
+        onSelectPage={selectPage}
+        onToggleAccount={() => setIsAccountOpen((current) => !current)}
+        onSignOut={handleSignOut}
+        onSignIn={() => setAppMode("auth")}
+        onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+        onToggleThemeMenu={() => setIsThemeMenuOpen((current) => !current)}
+        onThemeChange={handleThemeChange}
+        onCloseThemeMenu={() => setIsThemeMenuOpen(false)}
+      />
 
       <div
         className={`min-h-screen transition-all duration-200 ${
@@ -910,136 +730,67 @@ function App() {
                   </p>
                 )}
 
-                <div className="mb-6 flex flex-col gap-3 lg:flex-row">
-              <div className="relative flex-1">
-                <Search
-                  size={18}
-                  className="search-icon absolute left-3 top-1/2 -translate-y-1/2"
+                <WatchlistFilters
+                  searchText={searchText}
+                  selectedStatus={selectedStatus}
+                  selectedService={selectedService}
+                  serviceOptions={serviceOptions}
+                  onSearchChange={setSearchText}
+                  onStatusChange={setSelectedStatus}
+                  onServiceChange={setSelectedService}
+                  onClearFilters={clearFilters}
+                  onAddShow={() => setIsAddOpen(true)}
                 />
 
-                <input
-                  type="text"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Search my list..."
-                  className="app-input w-full rounded-lg border py-2.5 pl-10 pr-10 outline-none"
-                />
-
-                {searchText && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchText("")}
-                    className="search-clear absolute right-3 top-1/2 -translate-y-1/2"
-                    aria-label="Clear search"
-                  >
-                    <X size={18} />
-                  </button>
+                {(selectedStatus === "all" ||
+                  selectedStatus === "watching") && (
+                  <ShowList
+                    title="Currently Watching"
+                    shows={filteredWatching}
+                    status="watching"
+                    onEdit={(show) =>
+                      setShowToEdit({ show, status: "watching" })
+                    }
+                    onRemove={handleRemoveShow}
+                  />
                 )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 lg:flex lg:gap-3">
-                <div className="relative">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="watching">Watching</option>
-                    <option value="wantToWatch">Want to Watch</option>
-                    <option value="completed">Completed</option>
-                    <option value="onHold">On Hold</option>
-                  </select>
-
-                  <ChevronDown
-                    size={16}
-                    className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                {(selectedStatus === "all" ||
+                  selectedStatus === "wantToWatch") && (
+                  <ShowList
+                    title="Want to Watch"
+                    shows={filteredWantToWatch}
+                    status="wantToWatch"
+                    onEdit={(show) =>
+                      setShowToEdit({ show, status: "wantToWatch" })
+                    }
+                    onRemove={handleRemoveShow}
                   />
-                </div>
+                )}
 
-                <div className="relative">
-                  <select
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    className="app-select w-full appearance-none rounded-lg border px-4 py-2.5 pr-10 lg:w-44"
-                  >
-                    <option value="all">All Services</option>
-
-                    {serviceOptions.map((service) => (
-                      <option key={service} value={service}>
-                        {service}
-                      </option>
-                    ))}
-                  </select>
-
-                  <ChevronDown
-                    size={16}
-                    className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                {(selectedStatus === "all" ||
+                  selectedStatus === "completed") && (
+                  <ShowList
+                    title="Completed"
+                    shows={filteredCompleted}
+                    status="completed"
+                    defaultExpanded={false}
+                    onEdit={(show) =>
+                      setShowToEdit({ show, status: "completed" })
+                    }
+                    onRemove={handleRemoveShow}
                   />
-                </div>
-              </div>
+                )}
 
-              {(searchText !== "" ||
-                selectedStatus !== "all" ||
-                selectedService !== "all") && (
-                <button
-                  onClick={clearFilters}
-                  className="btn btn-default self-start whitespace-nowrap lg:self-center"
-                >
-                  Clear All
-                </button>
-              )}
-
-              <button
-                onClick={() => setIsAddOpen(true)}
-                className="btn btn-primary hidden self-center whitespace-nowrap md:inline-flex"
-              >
-                + Add
-              </button>
-              </div>
-
-              {(selectedStatus === "all" || selectedStatus === "watching") && (
-              <ShowList
-                title="Currently Watching"
-                shows={filteredWatching}
-                status="watching"
-                onEdit={(show) => setShowToEdit({ show, status: "watching" })}
-                onRemove={handleRemoveShow}
-              />
-            )}
-
-              {(selectedStatus === "all" || selectedStatus === "wantToWatch") && (
-              <ShowList
-                title="Want to Watch"
-                shows={filteredWantToWatch}
-                status="wantToWatch"
-                onEdit={(show) =>
-                  setShowToEdit({ show, status: "wantToWatch" })
-                }
-                onRemove={handleRemoveShow}
-              />
-            )}
-
-              {(selectedStatus === "all" || selectedStatus === "completed") && (
-              <ShowList
-                title="Completed"
-                shows={filteredCompleted}
-                status="completed"
-                defaultExpanded={false}
-                onEdit={(show) => setShowToEdit({ show, status: "completed" })}
-                onRemove={handleRemoveShow}
-              />
-            )}
-
-              {(selectedStatus === "all" || selectedStatus === "onHold") && (
-              <ShowList
-                title="On Hold"
-                shows={filteredOnHold}
-                status="onHold"
-                defaultExpanded={false}
-                onEdit={(show) => setShowToEdit({ show, status: "onHold" })}
-                onRemove={handleRemoveShow}
-              />
+                {(selectedStatus === "all" || selectedStatus === "onHold") && (
+                  <ShowList
+                    title="On Hold"
+                    shows={filteredOnHold}
+                    status="onHold"
+                    defaultExpanded={false}
+                    onEdit={(show) => setShowToEdit({ show, status: "onHold" })}
+                    onRemove={handleRemoveShow}
+                  />
                 )}
               </>
             )}
@@ -1050,9 +801,7 @@ function App() {
           <ProfilePage
             user={user}
             isGuest={appMode === "guest"}
-            onSignIn={() => {
-              setAppMode("auth");
-            }}
+            onSignIn={() => setAppMode("auth")}
           />
         )}
 
@@ -1062,9 +811,7 @@ function App() {
           <PrivacyDataPage
             isGuest={appMode === "guest"}
             theme={theme}
-            onSignIn={() => {
-              setAppMode("auth");
-            }}
+            onSignIn={() => setAppMode("auth")}
             onClearGuestData={handleClearGuestData}
           />
         )}
@@ -1081,72 +828,19 @@ function App() {
       )}
 
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="mobile-menu-overlay absolute inset-0"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-
-          <aside className="mobile-menu absolute left-0 top-0 h-full w-72 p-6 shadow-lg">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Where I'm Watching</h2>
-
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Close menu"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => selectPage("list")}
-              className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${
-                currentPage === "list" ? "nav-item-active" : ""
-              }`}
-            >
-              <List className="h-5 w-5" />
-              <span>My List</span>
-            </button>
-
-            <div className="mb-6">
-              <AccountMenu
-                currentPage={accountPage}
-                isOpen={isAccountOpen}
-                isGuest={appMode === "guest"}
-                onToggle={() => setIsAccountOpen((current) => !current)}
-                onSelect={selectPage}
-                onSignOut={handleSignOut}
-                onSignIn={() => {
-                  setAppMode("auth");
-                }}
-              />
-            </div>
-
-            <label htmlFor="mobile-theme" className="mb-2 block font-semibold">
-              Theme
-            </label>
-
-            <div className="relative">
-              <select
-                value={theme}
-                onChange={(e) => handleThemeChange(e.target.value as Theme)}
-                id="mobile-theme"
-                className="theme-select w-full appearance-none rounded-lg border px-3 py-2"
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="blues">Blues</option>
-              </select>
-
-              <ChevronDown
-                size={16}
-                className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-              />
-            </div>
-          </aside>
-        </div>
+        <MobileMenu
+          currentPage={currentPage}
+          accountPage={accountPage}
+          isAccountOpen={isAccountOpen}
+          isGuest={appMode === "guest"}
+          theme={theme}
+          onClose={() => setIsMobileMenuOpen(false)}
+          onSelectPage={selectPage}
+          onToggleAccount={() => setIsAccountOpen((current) => !current)}
+          onSignOut={handleSignOut}
+          onSignIn={() => setAppMode("auth")}
+          onThemeChange={handleThemeChange}
+        />
       )}
 
       {isAddOpen && (
@@ -1168,52 +862,17 @@ function App() {
       {appMode === "account" &&
         shouldShowMigrationPrompt &&
         !hasDismissedMigrationPrompt && (
-        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
-          <div className="modal w-full max-w-sm rounded-xl p-6 shadow-lg">
-            <h2 className="text-xl font-bold">
-              Bring your guest list with you?
-            </h2>
-
-            <p className="mt-4">
-              You have shows saved in Guest Mode. Would you like to add them to
-              your account so they&apos;re available when you sign in on other
-              devices?
-            </p>
-
-            {migrationError && (
-              <p role="alert" className="mt-4 text-sm">
-                {migrationError}
-              </p>
-            )}
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  hasDismissedMigrationPromptRef.current = true;
-                  setHasDismissedMigrationPrompt(true);
-                  setShouldShowMigrationPrompt(false);
-                }}
-                className="btn btn-default"
-                disabled={isMigratingGuestWatchlist}
-              >
-                Not Now
-              </button>
-
-              <button
-                type="button"
-                onClick={handleMigrateGuestWatchlist}
-                className="btn btn-primary"
-                disabled={isMigratingGuestWatchlist}
-              >
-                {isMigratingGuestWatchlist
-                  ? "Bringing Your List..."
-                  : "Bring My List"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          <GuestMigrationPrompt
+            isMigrating={isMigratingGuestWatchlist}
+            error={migrationError}
+            onMigrate={handleMigrateGuestWatchlist}
+            onDismiss={() => {
+              hasDismissedMigrationPromptRef.current = true;
+              setHasDismissedMigrationPrompt(true);
+              setShouldShowMigrationPrompt(false);
+            }}
+          />
+        )}
     </div>
   );
 }
