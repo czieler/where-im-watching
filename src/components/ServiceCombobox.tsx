@@ -51,6 +51,7 @@ function ServiceCombobox({ value, onChange }: ServiceComboboxProps) {
     >
       <div className="pretty-placeholder relative">
         <ComboboxInput
+          required
           id="show-service"
           className="app-input rounded-lg border"
           placeholder=" "

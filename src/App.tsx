@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import "./app.scss";
+import "./component-library.scss";
 import "./theme.scss";
 import Sidebar from "./components/layout/Sidebar";
 import MobileMenu from "./components/layout/MobileMenu";
@@ -37,6 +38,8 @@ type UserShowRow = {
   image_url: string | null;
   season: number | null;
   episode: number | null;
+  streaming_profile: string | null;
+  notes: string | null;
   created_at: string;
 };
 
@@ -97,7 +100,7 @@ async function fetchAccountWatchlist(
   const { data, error } = await supabase
     .from("user_shows")
     .select(
-      "user_id, show_id, title, service, status, image_url, season, episode, created_at",
+      "user_id, show_id, title, service, status, image_url, season, episode, streaming_profile, notes, created_at",
     )
     .eq("user_id", accountUserId)
     .order("created_at", { ascending: true });
@@ -125,6 +128,10 @@ async function fetchAccountWatchlist(
       ...(row.image_url ? { imageUrl: row.image_url } : {}),
       ...(row.season !== null ? { season: row.season } : {}),
       ...(row.episode !== null ? { episode: row.episode } : {}),
+      ...(row.streaming_profile
+        ? { streamingProfile: row.streaming_profile }
+        : {}),
+      ...(row.notes ? { notes: row.notes } : {}),
     });
   });
 
@@ -292,6 +299,8 @@ function App() {
     image_url: show.imageUrl ?? null,
     season: show.season ?? null,
     episode: show.episode ?? null,
+    streaming_profile: show.streamingProfile ?? null,
+    notes: show.notes ?? null,
   });
 
   const loadAccountWatchlist = useCallback(
@@ -318,8 +327,19 @@ function App() {
     imageUrl,
     season,
     episode,
+    streamingProfile,
+    notes,
   }: NewShow) => {
-    const show = { id, title, service, imageUrl, season, episode };
+    const show = {
+      id,
+      title,
+      service,
+      imageUrl,
+      season,
+      episode,
+      streamingProfile,
+      notes,
+    };
 
     if (appMode === "account" && user) {
       const { error } = await supabase
@@ -353,6 +373,8 @@ function App() {
           image_url: updatedShow.imageUrl ?? null,
           season: updatedShow.season ?? null,
           episode: updatedShow.episode ?? null,
+          streaming_profile: updatedShow.streamingProfile ?? null,
+          notes: updatedShow.notes ?? null,
         })
         .eq("user_id", user.id)
         .eq("show_id", updatedShow.id);
@@ -375,6 +397,8 @@ function App() {
         imageUrl: updatedShow.imageUrl,
         season: updatedShow.season,
         episode: updatedShow.episode,
+        streamingProfile: updatedShow.streamingProfile,
+        notes: updatedShow.notes,
       },
       updatedShow.status,
     );
@@ -820,7 +844,7 @@ function App() {
       {currentPage === "list" && (
         <button
           onClick={() => setIsAddOpen(true)}
-          className="btn-primary fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg md:hidden"
+          className="btn-primary mobile-add-button fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full md:hidden"
           aria-label="Add show"
         >
           <Plus size={26} />

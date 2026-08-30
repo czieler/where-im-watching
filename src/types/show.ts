@@ -7,6 +7,8 @@ export type Show = {
   imageUrl?: string;
   season?: number;
   episode?: number;
+  streamingProfile?: string;
+  notes?: string;
 };
 
 export type NewShow = Show & {

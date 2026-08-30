@@ -1,0 +1,327 @@
+/* ==========================================================
+   REUSEABLE COMPONENTS
+   Shared styles for reusable form controls and DataTable.
+   App-specific presentation belongs in app.scss.
+   ========================================================== */
+
+/* ==========================================================
+   FORM FIELDS
+   ========================================================== */
+
+.field {
+  margin-bottom: 1rem;
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--theme-border);
+    border-radius: 0.5rem;
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    padding: 1.2rem 0.8rem 0.45rem;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 7rem;
+    resize: vertical;
+  }
+
+  select {
+    appearance: none;
+    padding-right: 2.75rem;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 14%, transparent);
+  }
+
+  label {
+    position: absolute;
+    top: 0.8rem;
+    left: 0.8rem;
+    color: var(--theme-text-muted);
+    pointer-events: none;
+    transition: 0.15s ease;
+  }
+
+  input:focus + label,
+  input:not(:placeholder-shown) + label,
+  textarea:focus + label,
+  textarea:not(:placeholder-shown) + label,
+  select + label {
+    top: 0.22rem;
+    color: var(--theme-accent);
+    font-size: 0.7rem;
+  }
+
+  &__control {
+    position: relative;
+  }
+
+  &__select-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-50%);
+    color: var(--theme-accent);
+    pointer-events: none;
+  }
+
+  &__message {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--theme-text-muted);
+    font-size: 0.8rem;
+  }
+
+  &__clear {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--theme-text-muted);
+  }
+
+  &--disabled {
+    opacity: 0.65;
+  }
+
+  &--required {
+    input,
+    select,
+    textarea {
+      border-bottom: 3px solid var(--theme-accent);
+    }
+  }
+
+  &--required-bottom {
+    input,
+    select,
+    textarea {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  &--required-left {
+    input,
+    select,
+    textarea {
+      border-bottom: 1px solid var(--theme-border);
+      border-bottom-left-radius: 0;
+      border-left: 3px solid var(--theme-accent);
+      border-top-left-radius: 0;
+    }
+  }
+
+  &--error {
+    input,
+    select,
+    textarea {
+      border-color: #dc2626;
+    }
+
+    label,
+    .field__message {
+      color: #dc2626;
+    }
+  }
+}
+
+/* ==========================================================
+   DATA TABLE
+   ========================================================== */
+
+.data-table {
+  width: 100%;
+}
+
+.data-table__header {
+  overflow: hidden;
+  border-radius: 0.75rem 0.75rem 0 0;
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.data-table__header-toggle,
+.data-table__header-static {
+  width: 100%;
+  min-height: 3.4rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.data-table__header-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+}
+
+.data-table__header-toggle:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.data-table__header-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -4px;
+}
+
+.data-table__header-static {
+  padding: 0.85rem 1rem;
+}
+
+.data-table__header-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.data-table__header-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.data-table--collapsed .data-table__header {
+  border-radius: 0.75rem;
+}
+
+.data-table__scroll {
+  overflow-x: auto;
+  border-right: 1px solid var(--theme-border);
+  border-bottom: 1px solid var(--theme-border);
+  border-left: 1px solid var(--theme-border);
+  border-radius: 0 0 0.75rem 0.75rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.data-table table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--theme-surface);
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--theme-border);
+  vertical-align: middle;
+}
+
+.data-table thead th {
+  background: var(--theme-surface-alt);
+  color: var(--theme-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.data-table__expand-heading,
+.data-table__expand-cell {
+  width: 3.3rem;
+  text-align: center;
+}
+
+.data-table__cell--left {
+  text-align: left !important;
+}
+
+.data-table__cell--center {
+  text-align: center !important;
+}
+
+.data-table__cell--right {
+  text-align: right !important;
+}
+
+.data-table__row {
+  background: var(--theme-surface);
+  transition: background 0.15s ease;
+}
+
+.data-table__row:hover,
+.data-table__row--expanded {
+  background: var(--theme-hover);
+}
+
+.data-table__expand-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--theme-accent);
+}
+
+.data-table__expand-button:hover {
+  background: var(--theme-accent-soft);
+}
+
+.data-table__expand-button:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+.data-table__expanded-row td {
+  padding: 0;
+  background: var(--theme-surface-alt);
+}
+
+.data-table__expanded-content {
+  padding: 1rem 1.25rem 1.2rem calc(3.3rem + 1rem);
+  border-left: 3px solid var(--theme-accent);
+  color: var(--theme-text-muted);
+}
+
+.data-table__empty {
+  padding: 2rem !important;
+  color: var(--theme-text-muted);
+  text-align: center;
+}
+
+.data-table--without-footer tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .data-table table {
+    min-width: 700px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem;
+  }
+
+  .data-table__expanded-content {
+    padding-left: 1rem;
+  }
+}
