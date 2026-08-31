@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import type { Theme } from "../../types/theme";
 import {
   CircleHelp,
   Bug,
@@ -8,8 +10,18 @@ import {
   ChevronUp,
 } from "lucide-react";
 import HelpOption from "./HelpOption";
+import AccountPageContainer from "./AccountPageContainer";
+import FeedbackForm from "./FeedbackForm";
+import FeedbackSuccess from "./FeedbackSuccess";
+import { TextInput } from "../component-library/TextInput";
+import { Textarea } from "../component-library/Textarea";
 
 type HelpView = "menu" | "faq" | "bug" | "feature" | "feedback";
+type FeedbackType = "bug" | "feature" | "feedback";
+
+type HelpFeedbackPageProps = {
+  theme: Theme;
+};
 
 type FaqItem = {
   question: string;
@@ -39,18 +51,58 @@ const faqItems: FaqItem[] = [
   },
 ];
 
-function HelpFeedbackPage() {
+function HelpFeedbackPage({ theme }: HelpFeedbackPageProps) {
   const [helpView, setHelpView] = useState<HelpView>("menu");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const submitFeedback = async (
+    event: React.FormEvent<HTMLFormElement>,
+    type: FeedbackType,
+  ) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData(form);
+      const fields = Object.fromEntries(formData.entries());
+      const { error } = await supabase.functions.invoke("submit-feedback", {
+        body: { type, fields },
+      });
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Unable to submit feedback:", error);
+      setSubmitError("Unable to send your message right now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetSubmission = () => {
+    setSubmitError("");
+    setIsSubmitted(false);
+  };
 
   const goBack = () => {
     setHelpView("menu");
     setOpenFaq(null);
+    resetSubmission();
   };
+
+  const renderFeedbackSuccess = () => (
+    <FeedbackSuccess theme={theme} onSendAnother={resetSubmission} />
+  );
 
   if (helpView === "faq") {
     return (
-      <HelpPageContainer>
+      <AccountPageContainer>
         <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
@@ -64,7 +116,7 @@ function HelpFeedbackPage() {
             return (
               <div
                 key={item.question}
-                className="nav-item rounded-lg border border-black/10 dark:border-white/10"
+                className="nav-item rounded-lg border app-section-card"
               >
                 <button
                   type="button"
@@ -86,136 +138,131 @@ function HelpFeedbackPage() {
             );
           })}
         </div>
-      </HelpPageContainer>
+      </AccountPageContainer>
     );
   }
 
   if (helpView === "bug") {
     return (
-      <HelpPageContainer>
+      <AccountPageContainer>
         <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Tell us what went wrong so we can fix it.
         </p>
 
-        <form
-          className="max-w-2xl space-y-6"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="pretty-placeholder">
-            <input
+        {isSubmitted ? (
+          renderFeedbackSuccess()
+        ) : (
+          <FeedbackForm
+            submitLabel="Submit Bug Report"
+            onCancel={goBack}
+            isSubmitting={isSubmitting}
+            error={submitError}
+            onSubmit={(event) => submitFeedback(event, "bug")}
+          >
+            <TextInput
               required
               id="bug-subject"
+              name="subject"
               type="text"
-              className="app-input w-full rounded-lg border px-4 py-2.5 outline-none"
+              label="Subject"
             />
 
-            <label htmlFor="bug-subject">Subject</label>
-          </div>
-
-          <div className="pretty-placeholder">
-            <textarea
+            <Textarea
               required
               id="bug-description"
+              name="description"
               rows={6}
-              className="app-input w-full resize-y rounded-lg border px-4 py-3 outline-none"
+              label="What happened?"
             />
 
-            <label htmlFor="bug-description">What happened?</label>
-          </div>
-
-          <div className="pretty-placeholder">
-            <textarea
+            <Textarea
               id="bug-expected"
+              name="expected"
               rows={4}
-              className="app-input w-full resize-y rounded-lg border px-4 py-3 outline-none"
+              label="What did you expect to happen?"
             />
-
-            <label htmlFor="bug-expected">What did you expect to happen?</label>
-          </div>
-
-          <FormActions submitLabel="Submit Bug Report" onCancel={goBack} />
-        </form>
-      </HelpPageContainer>
+          </FeedbackForm>
+        )}
+      </AccountPageContainer>
     );
   }
 
   if (helpView === "feature") {
     return (
-      <HelpPageContainer>
+      <AccountPageContainer>
         <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Have an idea that would make Where I'm Watching better?
         </p>
 
-        <form
-          className="max-w-2xl space-y-6"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="pretty-placeholder">
-            <input
+        {isSubmitted ? (
+          renderFeedbackSuccess()
+        ) : (
+          <FeedbackForm
+            submitLabel="Submit Feature Request"
+            onCancel={goBack}
+            isSubmitting={isSubmitting}
+            error={submitError}
+            onSubmit={(event) => submitFeedback(event, "feature")}
+          >
+            <TextInput
               required
               id="feature-title"
+              name="title"
               type="text"
-              className="app-input w-full rounded-lg border px-4 py-2.5 outline-none"
+              label="Feature idea"
             />
 
-            <label htmlFor="feature-title">Feature idea</label>
-          </div>
-
-          <div className="pretty-placeholder">
-            <textarea
+            <Textarea
               required
               id="feature-description"
+              name="description"
               rows={7}
-              className="app-input w-full resize-y rounded-lg border px-4 py-3 outline-none"
+              label="Tell us more about your idea"
             />
-
-            <label htmlFor="feature-description">
-              Tell us more about your idea
-            </label>
-          </div>
-
-          <FormActions submitLabel="Submit Feature Request" onCancel={goBack} />
-        </form>
-      </HelpPageContainer>
+          </FeedbackForm>
+        )}
+      </AccountPageContainer>
     );
   }
 
   if (helpView === "feedback") {
     return (
-      <HelpPageContainer>
+      <AccountPageContainer>
         <BackButton onClick={goBack} label="Back to Help & Feedback" />
 
         <p className="mb-6 opacity-70">
           Tell us what you like, what you don't, or what we could do better.
         </p>
 
-        <form
-          className="max-w-2xl space-y-6"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="pretty-placeholder">
-            <textarea
+        {isSubmitted ? (
+          renderFeedbackSuccess()
+        ) : (
+          <FeedbackForm
+            submitLabel="Submit Feedback"
+            onCancel={goBack}
+            isSubmitting={isSubmitting}
+            error={submitError}
+            onSubmit={(event) => submitFeedback(event, "feedback")}
+          >
+            <Textarea
               required
               id="general-feedback"
+              name="feedback"
               rows={8}
-              className="app-input w-full resize-y rounded-lg border px-4 py-3 outline-none"
+              label="Your feedback"
             />
-
-            <label htmlFor="general-feedback">Your feedback</label>
-          </div>
-
-          <FormActions submitLabel="Submit Feedback" onCancel={goBack} />
-        </form>
-      </HelpPageContainer>
+          </FeedbackForm>
+        )}
+      </AccountPageContainer>
     );
   }
 
   return (
-    <HelpPageContainer>
+    <AccountPageContainer>
       <p className="mb-7 opacity-70">
         Need help, found a problem, or have an idea?
       </p>
@@ -253,19 +300,7 @@ function HelpFeedbackPage() {
       <div className="mt-8 border-t pt-5 text-sm opacity-50">
         Where I'm Watching · Version 0.1.0
       </div>
-    </HelpPageContainer>
-  );
-}
-
-type HelpPageContainerProps = {
-  children: React.ReactNode;
-};
-
-function HelpPageContainer({ children }: HelpPageContainerProps) {
-  return (
-    <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 sm:px-6">
-      <div className="max-w-4xl">{children}</div>
-    </main>
+    </AccountPageContainer>
   );
 }
 
@@ -283,31 +318,6 @@ function BackButton({ label, onClick }: BackButtonProps) {
     >
       ← {label}
     </button>
-  );
-}
-
-type FormActionsProps = {
-  submitLabel: string;
-  onCancel: () => void;
-};
-
-function FormActions({ submitLabel, onCancel }: FormActionsProps) {
-  return (
-    <>
-      <div className="flex flex-wrap gap-3 pt-2">
-        <button type="submit" className="btn btn-primary">
-          {submitLabel}
-        </button>
-
-        <button type="button" onClick={onCancel} className="btn btn-default">
-          Cancel
-        </button>
-      </div>
-
-      <p className="text-sm opacity-50">
-        This form isn't being sent anywhere yet.
-      </p>
-    </>
   );
 }
 

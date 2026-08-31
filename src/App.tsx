@@ -9,6 +9,7 @@ import MobileMenu from "./components/layout/MobileMenu";
 import WatchlistFilters from "./components/watchlist/WatchlistFilters";
 import GuestMigrationPrompt from "./components/account/GuestMigrationPrompt";
 import AuthScreen from "./components/AuthScreen";
+import ResetPasswordScreen from "./components/ResetPasswordScreen";
 import ShowList from "./components/ShowList";
 import AddShowModal from "./components/AddShowModal";
 import ProfilePage from "./components/account/ProfilePage";
@@ -20,7 +21,12 @@ import type { Theme } from "./types/theme";
 import { Menu, Plus } from "lucide-react";
 
 type Page = "list" | "profile" | "help" | "privacy";
-type AppMode = "loading" | "auth" | "guest" | "account";
+type AppMode =
+  | "loading"
+  | "auth"
+  | "passwordRecovery"
+  | "guest"
+  | "account";
 
 type WatchlistByStatus = {
   watching: Show[];
@@ -46,6 +52,23 @@ type UserShowRow = {
 type UserShowInsert = Omit<UserShowRow, "created_at">;
 
 const GUEST_WATCHLIST_KEY = "guestWatchlist";
+
+function isPasswordRecoveryUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(
+    window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash,
+  );
+
+  return (
+    params.get("type") === "recovery" || hashParams.get("type") === "recovery"
+  );
+}
+
+function clearAuthCallbackFromUrl() {
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 
 const pageTitles: Record<Page, string> = {
   list: "My List",
@@ -153,6 +176,7 @@ function App() {
   const [isAccountWatchlistLoaded, setIsAccountWatchlistLoaded] =
     useState(false);
   const [accountWatchlistError, setAccountWatchlistError] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
 
   const [appMode, setAppMode] = useState<AppMode>("loading");
   const [user, setUser] = useState<User | null>(null);
@@ -523,6 +547,38 @@ function App() {
     hasDismissedMigrationPromptRef.current = false;
     setHasDismissedMigrationPrompt(false);
     setShouldShowMigrationPrompt(false);
+    setAuthMessage("");
+    setAppMode("auth");
+  };
+
+  const handleDeleteAccount = async () => {
+    const { error } = await supabase.functions.invoke("delete-account");
+
+    if (error) {
+      throw error;
+    }
+
+    // The server has already deleted the auth user. Clear the local session and
+    // app state even if Supabase can no longer revoke the now-deleted session.
+    await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+    localStorage.removeItem("guestMode");
+    clearWatchlistState();
+    setUser(null);
+    setCurrentPage("list");
+    setIsAccountOpen(false);
+    setShouldShowMigrationPrompt(false);
+    setAuthMessage(
+      "Your account has been deleted. We're sorry to see you go. Your Where I'm Watching account and saved data have been deleted as requested.",
+    );
+    setAppMode("auth");
+  };
+
+  const handlePasswordRecoveryComplete = async () => {
+    await supabase.auth.signOut();
+    clearAuthCallbackFromUrl();
+    setUser(null);
+    setCurrentPage("list");
+    setAuthMessage("");
     setAppMode("auth");
   };
 
@@ -536,42 +592,31 @@ function App() {
   const pageTitle = pageTitles[currentPage];
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      const { data } = await supabase.auth.getSession();
+    const handleAccountSession = (sessionUser: User) => {
+      setUser(sessionUser);
 
-      if (data.session) {
-        setUser(data.session.user);
-
-        if (!hasDismissedMigrationPromptRef.current) {
-          setShouldShowMigrationPrompt(hasGuestWatchlistShows());
-        }
-
-        setIsGuestWatchlistLoaded(false);
-        clearWatchlistState();
-        setIsAccountWatchlistLoaded(false);
-        setAccountWatchlistError("");
-        setAppMode("account");
-        return;
+      if (!hasDismissedMigrationPromptRef.current) {
+        setShouldShowMigrationPrompt(hasGuestWatchlistShows());
       }
 
-      setUser(null);
-
-      const isGuest = localStorage.getItem("guestMode") === "true";
-
-      if (isGuest) {
-        loadGuestWatchlist();
-        setAppMode("guest");
-        return;
-      }
-
-      setAppMode("auth");
+      setIsGuestWatchlistLoaded(false);
+      clearWatchlistState();
+      setIsAccountWatchlistLoaded(false);
+      setAccountWatchlistError("");
+      localStorage.removeItem("guestMode");
+      setAppMode("account");
     };
-
-    initializeAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setUser(session?.user ?? null);
+        localStorage.removeItem("guestMode");
+        setAppMode("passwordRecovery");
+        return;
+      }
+
       if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         return;
       }
@@ -596,25 +641,41 @@ function App() {
         return;
       }
 
-      if (event !== "SIGNED_IN") {
+      if (event === "SIGNED_IN" && session) {
+        handleAccountSession(session.user);
+      }
+    });
+
+    const initializeAuth = async () => {
+      const recoveryUrl = isPasswordRecoveryUrl();
+      const { data } = await supabase.auth.getSession();
+
+      if (recoveryUrl && data.session) {
+        setUser(data.session.user);
+        localStorage.removeItem("guestMode");
+        setAppMode("passwordRecovery");
         return;
       }
 
-      if (session) {
-        setUser(session.user);
-
-        if (!hasDismissedMigrationPromptRef.current) {
-          setShouldShowMigrationPrompt(hasGuestWatchlistShows());
-        }
-
-        setIsGuestWatchlistLoaded(false);
-        clearWatchlistState();
-        setIsAccountWatchlistLoaded(false);
-        setAccountWatchlistError("");
-        localStorage.removeItem("guestMode");
-        setAppMode("account");
+      if (data.session) {
+        handleAccountSession(data.session.user);
+        return;
       }
-    });
+
+      setUser(null);
+
+      const isGuest = localStorage.getItem("guestMode") === "true";
+
+      if (isGuest) {
+        loadGuestWatchlist();
+        setAppMode("guest");
+        return;
+      }
+
+      setAppMode("auth");
+    };
+
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
@@ -678,17 +739,28 @@ function App() {
     return null;
   }
 
+  if (appMode === "passwordRecovery") {
+    return (
+      <div className="app" data-theme={theme}>
+        <ResetPasswordScreen onComplete={handlePasswordRecoveryComplete} />
+      </div>
+    );
+  }
+
   if (appMode === "auth") {
     return (
       <div className="app" data-theme={theme}>
         <AuthScreen
+          initialMessage={authMessage}
           onGuestContinue={() => {
+            setAuthMessage("");
             setUser(null);
             localStorage.setItem("guestMode", "true");
             loadGuestWatchlist();
             setAppMode("guest");
           }}
           onAuthSuccess={() => {
+            setAuthMessage("");
             if (!hasDismissedMigrationPromptRef.current) {
               setShouldShowMigrationPrompt(hasGuestWatchlistShows());
             }
@@ -749,7 +821,7 @@ function App() {
             ) : (
               <>
                 {accountWatchlistError && (
-                  <p role="alert" className="mb-4 text-sm">
+                  <p role="alert" className="app-error mb-4 text-sm">
                     {accountWatchlistError}
                   </p>
                 )}
@@ -829,14 +901,15 @@ function App() {
           />
         )}
 
-        {currentPage === "help" && <HelpFeedbackPage />}
+        {currentPage === "help" && <HelpFeedbackPage theme={theme} />}
 
         {currentPage === "privacy" && (
           <PrivacyDataPage
             isGuest={appMode === "guest"}
-            theme={theme}
+            user={user}
             onSignIn={() => setAppMode("auth")}
             onClearGuestData={handleClearGuestData}
+            onDeleteAccount={handleDeleteAccount}
           />
         )}
       </div>

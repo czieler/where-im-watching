@@ -6,11 +6,16 @@ import { supabase } from "../lib/supabaseClient";
 type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
 type AuthScreenProps = {
+  initialMessage?: string;
   onGuestContinue: () => void;
   onAuthSuccess: () => void;
 };
 
-function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
+function AuthScreen({
+  initialMessage = "",
+  onGuestContinue,
+  onAuthSuccess,
+}: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -19,7 +24,7 @@ function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [errorMessage, setErrorMessage] = useState("");
 
   const isSignUp = mode === "signUp";
@@ -45,7 +50,9 @@ function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
 
     try {
       if (isForgotPassword) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
 
         if (error) {
           setErrorMessage(error.message);
@@ -80,8 +87,11 @@ function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
           return;
         }
 
+        setMode("signIn");
+        setPassword("");
+        setConfirmPassword("");
         setMessage(
-          "Account created. Check your email to confirm your account before signing in.",
+          "Account created! Check your email to confirm your address, then sign in.",
         );
 
         return;
@@ -243,7 +253,7 @@ function AuthScreen({ onGuestContinue, onAuthSuccess }: AuthScreenProps) {
             )}
 
             {errorMessage && (
-              <div className="mt-4 text-sm" role="alert">
+              <div className="app-error mt-4 text-sm" role="alert">
                 {errorMessage}
               </div>
             )}

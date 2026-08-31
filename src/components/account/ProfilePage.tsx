@@ -1,5 +1,9 @@
+import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { KeyRound, UserRound } from "lucide-react";
+import PasswordUpdateForm from "../PasswordUpdateForm";
+import AccountPageContainer from "./AccountPageContainer";
+import { TextInput } from "../component-library/TextInput";
 
 type ProfilePageProps = {
   user: User | null;
@@ -8,10 +12,11 @@ type ProfilePageProps = {
 };
 
 function ProfilePage({ user, isGuest, onSignIn }: ProfilePageProps) {
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   if (isGuest) {
     return (
-      <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 sm:px-6">
-        <div className="max-w-4xl">
+      <AccountPageContainer>
           <div className="mb-7">
             <p className="mt-1 opacity-70">
               You're currently using Where I'm Watching as a guest.
@@ -38,32 +43,25 @@ function ProfilePage({ user, isGuest, onSignIn }: ProfilePageProps) {
               </button>
             </div>
           </div>
-        </div>
-      </main>
+      </AccountPageContainer>
     );
   }
 
   return (
-    <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] px-4 py-6 sm:px-6">
-      <div className="max-w-4xl">
+    <AccountPageContainer>
         <div className="mb-7">
           <p className="mt-1 opacity-70">Manage your account information.</p>
         </div>
 
         <div className="rounded-xl border border-black/10 p-6 sm:p-8 dark:border-white/10">
           <div className="max-w-2xl space-y-6">
-            <div className="pretty-placeholder">
-              <input
-                required
-                id="email"
-                type="email"
-                value={user?.email ?? ""}
-                readOnly
-                className="app-input w-full rounded-lg border px-4 py-2.5 outline-none"
-              />
-
-              <label htmlFor="email">Email</label>
-            </div>
+            <TextInput
+              id="email"
+              type="email"
+              value={user?.email ?? ""}
+              readOnly
+              label="Email"
+            />
 
             <div className="rounded-lg border border-black/10 p-4 dark:border-white/10">
               <div className="flex items-start gap-3">
@@ -77,19 +75,28 @@ function ProfilePage({ user, isGuest, onSignIn }: ProfilePageProps) {
                   </p>
                 </div>
 
-                <button type="button" className="btn btn-default">
-                  Change
+                <button
+                  type="button"
+                  className="btn btn-default"
+                  onClick={() =>
+                    setIsChangingPassword((current) => !current)
+                  }
+                >
+                  {isChangingPassword ? "Cancel" : "Change"}
                 </button>
               </div>
-            </div>
 
-            <button type="button" className="btn btn-primary">
-              Save Changes
-            </button>
+              {isChangingPassword && (
+                <div className="mt-5 border-t border-black/10 pt-5 dark:border-white/10">
+                  <PasswordUpdateForm
+                    onSuccess={() => setIsChangingPassword(false)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+    </AccountPageContainer>
   );
 }
 

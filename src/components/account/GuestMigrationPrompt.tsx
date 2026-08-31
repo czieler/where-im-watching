@@ -22,7 +22,7 @@ function GuestMigrationPrompt({
         </p>
 
         {error && (
-          <p role="alert" className="mt-4 text-sm">
+          <p role="alert" className="app-error mt-4 text-sm">
             {error}
           </p>
         )}

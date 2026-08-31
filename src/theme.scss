@@ -192,6 +192,14 @@
     color: var(--theme-input-text);
   }
 
+  /* ========================================================
+     FORM / ACTION FEEDBACK
+     ======================================================== */
+
+  .app-error {
+    color: #dc2626;
+  }
+
   .pretty-placeholder {
     label {
       color: var(--theme-text-muted);
@@ -242,6 +250,11 @@
     p {
       color: var(--theme-text-muted);
     }
+  }
+
+  .app-section-card {
+    background-color: var(--theme-surface);
+    border-color: var(--theme-border);
   }
 
   /* ========================================================

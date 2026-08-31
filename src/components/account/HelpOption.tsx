@@ -17,7 +17,7 @@ function HelpOption({
     <button
       type="button"
       onClick={onClick}
-      className="nav-item flex w-full items-center gap-4 rounded-lg border border-black/10 p-4 text-left dark:border-white/10"
+      className="nav-item flex w-full items-center gap-4 rounded-lg border app-section-card p-4 text-left"
     >
       <Icon size={20} />
 

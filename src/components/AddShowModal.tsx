@@ -166,7 +166,11 @@ function AddShowModal({
                 </div>
               </Combobox>
 
-              {searchError && <p className="mt-2 text-sm">{searchError}</p>}
+              {searchError && (
+                <p className="app-error mt-2 text-sm" role="alert">
+                  {searchError}
+                </p>
+              )}
 
               {selectedShow && (
                 <div className="detail-card mt-4 flex gap-4 rounded-lg border p-4">
