@@ -28,17 +28,15 @@ export function useStreamingServices({
   watchlistServices,
 }: UseStreamingServicesArgs) {
   const [services, setServices] = useState<StreamingService[]>([]);
-  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(
-    new Set(),
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
+  const [, setGuestServices] = useState<string[]>(() =>
+    readGuestServicePreferences().services,
   );
-  const [, setGuestServices] = useState<string[]>(
-    () => readGuestServicePreferences().services,
+  const [guestCustomServices, setGuestCustomServices] = useState<string[]>(() =>
+    readGuestServicePreferences().customServices,
   );
-  const [guestCustomServices, setGuestCustomServices] = useState<string[]>(
-    () => readGuestServicePreferences().customServices,
-  );
-  const [guestExcludedServices, setGuestExcludedServices] = useState<string[]>(
-    () => readGuestServicePreferences().excludedServices,
+  const [guestExcludedServices, setGuestExcludedServices] = useState<string[]>(() =>
+    readGuestServicePreferences().excludedServices,
   );
   const [isConfigured, setIsConfigured] = useState(
     () => readGuestServicePreferences().configured,
@@ -94,12 +92,9 @@ export function useStreamingServices({
               guestPreferences.services.map(normalizeServiceName),
             );
             const excludedServices = guestPreferences.configured
-              ? FALLBACK_SERVICES.filter((name) =>
-                  verifiedNames.has(normalizeServiceName(name)),
-                )
-                  .filter(
-                    (name) => !selectedLegacy.has(normalizeServiceName(name)),
-                  )
+              ? FALLBACK_SERVICES
+                  .filter((name) => verifiedNames.has(normalizeServiceName(name)))
+                  .filter((name) => !selectedLegacy.has(normalizeServiceName(name)))
                   .map(normalizeServiceName)
               : [];
 
@@ -117,13 +112,8 @@ export function useStreamingServices({
             setIsConfigured(excludedServices.length > 0);
           }
         } catch (guestCatalogError) {
-          console.error(
-            "Unable to load guest streaming-service catalog; using built-in fallback:",
-            guestCatalogError,
-          );
-          setError(
-            "Unable to refresh the streaming-service catalog right now.",
-          );
+          console.error("Unable to load guest streaming-service catalog; using built-in fallback:", guestCatalogError);
+          setError("Unable to refresh the streaming-service catalog right now.");
           setServices(
             FALLBACK_SERVICES.map((name) => ({
               id: `fallback-${normalizeServiceName(name)}`,
@@ -142,17 +132,12 @@ export function useStreamingServices({
 
       if (!user) return;
 
-      const [visible, selectedIds, configuredResult, adminResult] =
-        await Promise.all([
-          fetchVisibleStreamingServices(),
-          fetchUserServiceIds(user.id),
-          fetchServiceSettingsConfigured(user.id),
-          supabase
-            .from("app_admins")
-            .select("user_id")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        ]);
+      const [visible, selectedIds, configuredResult, adminResult] = await Promise.all([
+        fetchVisibleStreamingServices(),
+        fetchUserServiceIds(user.id),
+        fetchServiceSettingsConfigured(user.id),
+        supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
+      ]);
 
       setServices(visible);
       setSelectedServiceIds(new Set(selectedIds));
@@ -231,18 +216,10 @@ export function useStreamingServices({
       return Array.from(merged.values()).sort((a, b) => a.localeCompare(b));
     }
     return selectedAccountServices.map((service) => service.name);
-  }, [
-    guestCustomServices,
-    guestExcludedServices,
-    mode,
-    selectedAccountServices,
-    verifiedServices,
-  ]);
+  }, [guestCustomServices, guestExcludedServices, mode, selectedAccountServices, verifiedServices]);
 
   const manageableServices = useMemo(() => {
-    const byName = new Map(
-      services.map((service) => [service.normalizedName, service]),
-    );
+    const byName = new Map(services.map((service) => [service.normalizedName, service]));
     if (mode === "guest") {
       const guestVisibleNames = guestCustomServices;
       guestVisibleNames.forEach((name) => {
@@ -257,9 +234,7 @@ export function useStreamingServices({
         }
       });
     }
-    return Array.from(byName.values()).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
+    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [guestCustomServices, mode, services]);
 
   const effectiveServices = useMemo(() => {
@@ -272,23 +247,16 @@ export function useStreamingServices({
     const merged = new Map(
       verifiedServices.map((service) => [service.normalizedName, service.name]),
     );
-    watchlistServices
-      .filter(Boolean)
-      .forEach((name) => merged.set(normalizeServiceName(name), name));
+    watchlistServices.filter(Boolean).forEach((name) =>
+      merged.set(normalizeServiceName(name), name),
+    );
     // A custom/pending service selected by this account must remain usable even
     // before the user explicitly customizes the standard service checklist.
     selectedAccountServices.forEach((service) =>
       merged.set(service.normalizedName, service.name),
     );
     return Array.from(merged.values()).sort((a, b) => a.localeCompare(b));
-  }, [
-    isConfigured,
-    mode,
-    personalServices,
-    selectedAccountServices,
-    verifiedServices,
-    watchlistServices,
-  ]);
+  }, [isConfigured, mode, personalServices, selectedAccountServices, verifiedServices, watchlistServices]);
 
   const toggleService = useCallback(
     async (service: StreamingService, selected: boolean) => {
@@ -297,9 +265,7 @@ export function useStreamingServices({
       try {
         if (mode === "guest") {
           const current = readGuestServicePreferences();
-          const excluded = new Set(
-            current.excludedServices.map(normalizeServiceName),
-          );
+          const excluded = new Set(current.excludedServices.map(normalizeServiceName));
 
           if (selected) excluded.delete(service.normalizedName);
           else excluded.add(service.normalizedName);
@@ -352,10 +318,7 @@ export function useStreamingServices({
       if (mode === "guest") {
         const current = readGuestServicePreferences();
         const customByNormalized = new Map(
-          current.customServices.map((value) => [
-            normalizeServiceName(value),
-            value,
-          ]),
+          current.customServices.map((value) => [normalizeServiceName(value), value]),
         );
         customByNormalized.set(normalizeServiceName(name), name);
         const customServices = Array.from(customByNormalized.values()).sort();
@@ -364,6 +327,8 @@ export function useStreamingServices({
           (value) => normalizeServiceName(value) !== normalizeServiceName(name),
         );
 
+        // Keep the service immediately usable for this guest, but also submit
+        // it to the shared catalog so it appears in Admin > Pending Services.
         writeGuestServicePreferences({
           configured: excluded.length > 0,
           services: [],
@@ -373,18 +338,16 @@ export function useStreamingServices({
         setGuestCustomServices(customServices);
         setGuestExcludedServices(excluded);
         setIsConfigured(excluded.length > 0);
+
+        await submitCustomStreamingService(name);
         return;
       }
 
       if (!user) throw new Error("Sign in to submit a streaming service.");
       const submitted = await submitCustomStreamingService(name);
       setServices((current) => {
-        const withoutDuplicate = current.filter(
-          (service) => service.id !== submitted.id,
-        );
-        return [...withoutDuplicate, submitted].sort((a, b) =>
-          a.name.localeCompare(b.name),
-        );
+        const withoutDuplicate = current.filter((service) => service.id !== submitted.id);
+        return [...withoutDuplicate, submitted].sort((a, b) => a.name.localeCompare(b.name));
       });
       setSelectedServiceIds((current) => new Set(current).add(submitted.id));
       // Adding a custom service is not the same as intentionally narrowing My
@@ -397,40 +360,37 @@ export function useStreamingServices({
   const ensureService = useCallback(
     async (name: string) => {
       const normalized = normalizeServiceName(name);
-      const service = services.find(
-        (item) => item.normalizedName === normalized,
-      );
+      const service = services.find((item) => item.normalizedName === normalized);
 
       if (service) {
-        if (mode === "account" && selectedServiceIds.has(service.id)) return;
-        if (mode === "guest") {
-          const current = readGuestServicePreferences();
-          const excluded = new Set(
-            current.excludedServices.map(normalizeServiceName),
-          );
-          const available = [
-            ...verifiedServices.map((item) => item.name),
-            ...current.customServices,
-          ].filter((item) => !excluded.has(normalizeServiceName(item)));
-          if (
-            available.some((item) => normalizeServiceName(item) === normalized)
-          )
-            return;
+        if (mode === "account") {
+          if (selectedServiceIds.has(service.id)) return;
+          if (!user) throw new Error("Sign in to manage services.");
+
+          // Add Show may discover a verified master-catalog service that the
+          // user has not checked yet. Select it without marking the whole My
+          // Services list as intentionally configured; otherwise one typed
+          // service could accidentally narrow the dropdown to only selections.
+          await setUserServiceSelected(user.id, service.id, true, false);
+          setSelectedServiceIds((current) => new Set(current).add(service.id));
+          return;
         }
+
+        const current = readGuestServicePreferences();
+        const excluded = new Set(current.excludedServices.map(normalizeServiceName));
+        const available = [
+          ...verifiedServices.map((item) => item.name),
+          ...current.customServices,
+        ].filter((item) => !excluded.has(normalizeServiceName(item)));
+        if (available.some((item) => normalizeServiceName(item) === normalized)) return;
+
         await toggleService(service, true);
         return;
       }
 
       await addCustomService(name);
     },
-    [
-      addCustomService,
-      mode,
-      selectedServiceIds,
-      services,
-      toggleService,
-      verifiedServices,
-    ],
+    [addCustomService, mode, selectedServiceIds, services, toggleService, user, verifiedServices],
   );
 
   return {

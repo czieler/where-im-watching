@@ -203,3 +203,9 @@ Where I'm Watching is intended to be both a useful product and a portfolio-quali
 ### V1.1 service-preference repair
 
 If you tested an earlier pre-release V1.1 build, run `supabase/migrations/20260901_v1_1_service_settings_marker_fix.sql` once and redeploy the `submit-service` Edge Function. Earlier builds could incorrectly treat adding a custom service as an explicit My Services configuration and hide the rest of the verified catalog.
+
+### Streaming-service auto-add behavior
+
+- In Add Show, typing a service that already exists in the shared catalog automatically selects it for the user.
+- Typing a brand-new service submits it to Pending Services for admin review.
+- Guest users can submit new services for review too; the service remains usable locally while pending.

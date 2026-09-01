@@ -125,8 +125,9 @@ export async function setUserServiceSelected(
   userId: string,
   serviceId: string,
   selected: boolean,
+  markConfigured = true,
 ) {
-  await markServiceSettingsConfigured(userId);
+  if (markConfigured) await markServiceSettingsConfigured(userId);
 
   if (selected) {
     const { error } = await supabase

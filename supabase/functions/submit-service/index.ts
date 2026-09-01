@@ -18,21 +18,29 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const authorization = request.headers.get("Authorization");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!authorization || !supabaseUrl || !anonKey || !serviceRoleKey) {
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json({ error: "Server configuration error" }, 500);
   }
 
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false },
-  });
-  const { data: { user }, error: userError } = await userClient.auth.getUser();
-  if (userError || !user) return json({ error: "Not authenticated" }, 401);
+  // Authentication is optional for this function so Guest Mode can submit a
+  // new service for moderation too. When a real user JWT is present, retain
+  // the submitter and add the service to that account's selected services.
+  let userId: string | null = null;
+  const authorization = request.headers.get("Authorization");
+  if (authorization) {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authorization } },
+      auth: { persistSession: false },
+    });
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
+    userId = user?.id ?? null;
+  }
 
   const { name: rawName } = (await request.json()) as { name?: string };
   const name = rawName?.trim().replace(/\s+/g, " ");
@@ -51,7 +59,7 @@ Deno.serve(async (request) => {
   if (existingError) return json({ error: "Unable to check service" }, 500);
 
   let service = existing;
-  let created = false;
+  let shouldNotify = false;
 
   if (!service) {
     const { data, error } = await admin
@@ -60,20 +68,20 @@ Deno.serve(async (request) => {
         name,
         normalized_name: normalizedName,
         moderation_status: "pending",
-        submitted_by_user_id: user.id,
+        submitted_by_user_id: userId,
         submission_count: 1,
       })
       .select("id, name, normalized_name, moderation_status, submitted_by_user_id, submission_count")
       .single();
     if (error) return json({ error: "Unable to add service" }, 500);
     service = data;
-    created = true;
+    shouldNotify = true;
   } else if (service.moderation_status !== "verified") {
-    const nextStatus = service.moderation_status === "rejected" ? "pending" : service.moderation_status;
+    const wasRejected = service.moderation_status === "rejected";
     const { data: updatedService, error: updateError } = await admin
       .from("streaming_services")
       .update({
-        moderation_status: nextStatus,
+        moderation_status: wasRejected ? "pending" : service.moderation_status,
         submission_count: service.submission_count + 1,
         updated_at: new Date().toISOString(),
       })
@@ -82,18 +90,21 @@ Deno.serve(async (request) => {
       .single();
     if (updateError) return json({ error: "Unable to update service submission" }, 500);
     service = updatedService;
-    created = service.moderation_status === "pending" && existing.moderation_status === "rejected";
+    shouldNotify = wasRejected;
   }
 
-  const { error: mappingError } = await admin
-    .from("user_streaming_services")
-    .upsert({ user_id: user.id, service_id: service.id }, { onConflict: "user_id,service_id" });
-  if (mappingError) return json({ error: "Unable to save service preference" }, 500);
+  if (userId) {
+    const { error: mappingError } = await admin
+      .from("user_streaming_services")
+      .upsert({ user_id: userId, service_id: service.id }, { onConflict: "user_id,service_id" });
+    if (mappingError) return json({ error: "Unable to save service preference" }, 500);
+  }
 
-  if (created) {
+  if (shouldNotify) {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const supportEmail = Deno.env.get("SUPPORT_EMAIL");
     if (resendApiKey && supportEmail) {
+      const submitter = userId ? "A signed-in user" : "A guest user";
       const mailResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -104,10 +115,12 @@ Deno.serve(async (request) => {
           from: "Where I'm Watching <support@czielerworks.app>",
           to: [supportEmail],
           subject: `[Where I'm Watching] New streaming service: ${name}`,
-          text: `A user submitted a new streaming service for review.\n\nService: ${name}\n\nOpen the Admin > Pending Services screen to approve, merge, or keep it private.`,
+          text: `${submitter} submitted a new streaming service for review.\n\nService: ${name}\n\nOpen the Admin > Pending Services screen to approve, merge, or keep it private.`,
         }),
       });
-      if (!mailResponse.ok) console.error("Unable to send service-review email:", await mailResponse.text());
+      if (!mailResponse.ok) {
+        console.error("Unable to send service-review email:", await mailResponse.text());
+      }
     }
   }
 

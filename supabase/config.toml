@@ -2,7 +2,7 @@
 verify_jwt = false
 
 [functions.submit-service]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-services]
 verify_jwt = true
