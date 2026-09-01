@@ -1,2 +1,8 @@
 [functions.submit-feedback]
 verify_jwt = false
+
+[functions.submit-service]
+verify_jwt = true
+
+[functions.admin-services]
+verify_jwt = true

@@ -1,10 +1,10 @@
-import { ChevronDown, List, Palette, User as UserIcon } from "lucide-react";
+import { ChevronDown, List, Palette, User as UserIcon, Tv, Clapperboard, ShieldCheck } from "lucide-react";
 import wiwLogo from "../../assets/wiw_logo.png";
 import AccountMenu from "../account/AccountMenu";
 import type { AccountPage } from "../account/AccountMenu";
 import type { Theme } from "../../types/theme";
 
-type Page = "list" | "profile" | "help" | "privacy";
+type Page = "list" | "services" | "roadmap" | "admin" | "profile" | "help" | "privacy";
 
 type SidebarProps = {
   currentPage: Page;
@@ -12,6 +12,8 @@ type SidebarProps = {
   isAccountOpen: boolean;
   isGuest: boolean;
   isCollapsed: boolean;
+  isAdmin: boolean;
+  pendingAdminCount: number;
   isThemeMenuOpen: boolean;
   theme: Theme;
   onSelectPage: (page: Page) => void;
@@ -36,6 +38,8 @@ function Sidebar({
   isAccountOpen,
   isGuest,
   isCollapsed,
+  isAdmin,
+  pendingAdminCount,
   isThemeMenuOpen,
   theme,
   onSelectPage,
@@ -80,6 +84,38 @@ function Sidebar({
 
           {!isCollapsed && <span>My List</span>}
         </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectPage("services")}
+          className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "services" ? "nav-item-active" : ""}`}
+          title={isCollapsed ? "My Services" : undefined}
+        >
+          <Tv className="h-5 w-5 shrink-0" />
+          {!isCollapsed && <span>My Services</span>}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectPage("roadmap")}
+          className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "roadmap" ? "nav-item-active" : ""}`}
+          title={isCollapsed ? "Coming Soon" : undefined}
+        >
+          <Clapperboard className="h-5 w-5 shrink-0" />
+          {!isCollapsed && <span>Coming Soon</span>}
+        </button>
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => onSelectPage("admin")}
+            className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "admin" ? "nav-item-active" : ""}`}
+            title={isCollapsed ? "Admin" : undefined}
+          >
+            <ShieldCheck className="h-5 w-5 shrink-0" />
+            {!isCollapsed && <span className="flex flex-1 items-center justify-between">Admin{pendingAdminCount > 0 && <span className="rounded-full border px-2 py-0.5 text-xs">{pendingAdminCount}</span>}</span>}
+          </button>
+        )}
 
         <AccountMenu
           currentPage={accountPage}

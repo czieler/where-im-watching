@@ -1,5 +1,8 @@
 # Where I'm Watching
 
+**Live:** https://wiw.czielerworks.app
+
+
 A responsive React + TypeScript application for keeping track of TV shows across streaming services — including where you're watching them, which streaming profile you're using, and where you left off.
 
 ![Where I'm Watching application screenshots](src/assets/readme-screens.png)
@@ -22,6 +25,11 @@ The project is also a hands-on exploration of modern React and TypeScript develo
 - Add, edit, move, and remove watchlist entries
 - Season and episode progress tracking
 - Streaming service and optional streaming-profile tracking
+- Personal **My Services** preferences so Add Show prioritizes services a user actually has
+- Last-used streaming service remembered when adding another show
+- User-submitted streaming services with private/pending use before admin verification
+- Guest custom services remain private to that browser while the full verified catalog stays available unless the guest explicitly customizes My Services
+- Admin service moderation workflow: approve, merge duplicates, or keep a service private; approved services join the shared catalog for everyone
 - Expandable per-show notes
 - Light, Dark, and Blues themes with persisted preferences
 - Guest Mode with local browser persistence
@@ -37,6 +45,9 @@ The project is also a hands-on exploration of modern React and TypeScript develo
 - Bug reports, feature requests, and general feedback delivered through a Supabase Edge Function and Resend
 - Consistent required-field and error-state styling
 - Reusable account layouts, feedback forms, success states, dialogs, form controls, and data tables
+- “Add another show” workflow for rapid list entry
+- Database-backed app-version checking with a themed refresh prompt when a new deployment is available
+- In-app **Coming Soon / Future Seasons** roadmap
 
 ## Tech Stack
 
@@ -91,6 +102,16 @@ TVmaze powers show search and metadata. Requests are debounced to avoid sending 
 
 In addition to recording a streaming service, a show can optionally record the profile used within a shared account. This addresses cases where multiple people share one Netflix/Hulu/etc. subscription but maintain separate viewing profiles.
 
+### Streaming Service Catalog & Moderation
+
+Version 1.1 separates the shared streaming-service catalog from each user's personal service preferences. Verified services are available to everyone, while users can immediately use a newly submitted service without exposing it globally. Guest users begin with the full verified catalog plus any browser-private custom services; the list narrows only after they explicitly change selections on My Services. Signed-in submissions are queued for admin review and can be approved, merged into an existing service, or kept private. Guest preferences stay in `localStorage`; account preferences sync through Supabase.
+
+New service submissions trigger a server-side Resend notification so moderation does not depend on manually checking the database. Admin status is stored server-side rather than inferred from client-side configuration.
+
+### Deployment Version Awareness
+
+The frontend identifies itself with an application version while Supabase stores the currently deployed version in `app_config`. The app periodically checks the database and, when the versions differ, displays a themed **“A new season has been deployed”** refresh prompt. This prevents long-lived browser tabs from quietly remaining on stale frontend code.
+
 ## Project Structure
 
 ```text
@@ -107,8 +128,11 @@ src/
   utils/                 Shared utilities
 supabase/
   functions/
+    admin-services/      Admin moderation for submitted services
     delete-account/      Secure account/data deletion
     submit-feedback/     Server-side support email delivery
+    submit-service/      Authenticated service submission + email alert
+  migrations/            Versioned schema/data changes
 ```
 
 ## Development
@@ -126,20 +150,56 @@ Create a production build with:
 npm run build
 ```
 
-## Next Steps
+## Coming Next Season
 
-The current focus is launch readiness rather than expanding the feature set. Planned work includes:
+The web app is live and Version 1.1 focuses on user-requested streaming-service personalization and production polish. The next planned season includes:
 
-- Automated unit/component testing
-- Additional accessibility and cross-browser testing
-- Production hosting and domain configuration
-- Privacy/support web pages for store listings
-- Capacitor packaging for mobile distribution
-- iOS release first via cloud iOS builds, TestFlight, and the Apple App Store
-- Android/Google Play release using the same React/Capacitor codebase
+- Returning/new-season notifications for tracked shows
+- Capacitor packaging for iPhone/iOS
+- TestFlight and Apple App Store release work
+- Android/Google Play packaging using the same React/Capacitor codebase
+- Additional automated unit/component testing
+- Accessibility, keyboard, and cross-browser regression testing
 
-Longer-term ideas include movie tracking, returning-season notifications, recommendation sharing, family/shared watchlists, and streaming-service usage insights.
+## Future Seasons
+
+Longer-term ideas currently being explored include:
+
+- Screenshot/photo import from streaming-service “Continue Watching” screens
+- Direct streaming-service integrations where APIs and terms permit them
+- Recommendation sharing by email/SMS with per-show notes
+- Family/shared watchlists
+- Movie tracking and broader media types
+- User voting/interest signals for planned features
+- Smarter metadata caching and refresh behavior
+
+The in-app **Coming Soon** page gives users a lightweight view of planned work and points them to Feature Request when something they want is not already on the roadmap.
+
+## Version 1.1 Supabase Setup
+
+Version 1.1 adds database-backed streaming-service preferences, moderation, admin access, and deployment version awareness. Apply:
+
+```text
+supabase/migrations/20260901_v1_1_streaming_services.sql
+```
+
+Then add the desired authenticated user to `public.app_admins` using the commented SQL at the bottom of the migration. The repository intentionally does **not** hard-code an administrator email or user ID.
+
+Deploy the two new authenticated Edge Functions:
+
+```bash
+supabase functions deploy submit-service
+supabase functions deploy admin-services
+```
+
+`submit-service` reuses the existing `RESEND_API_KEY` and `SUPPORT_EMAIL` Supabase secrets. No API keys or service-role credentials belong in the client application.
+
+When deploying a future frontend version, update `public.app_config.current_version` after the new build is live. Existing sessions will then receive the refresh prompt.
 
 ## Project Goals
 
 Where I'm Watching is intended to be both a useful product and a portfolio-quality demonstration of modern front-end engineering: responsive UI, reusable component architecture, API integration, authentication, persistent application state, serverless functions, account/privacy workflows, and incremental refactoring as a product grows.
+
+### V1.1 service-preference repair
+
+If you tested an earlier pre-release V1.1 build, run `supabase/migrations/20260901_v1_1_service_settings_marker_fix.sql` once and redeploy the `submit-service` Edge Function. Earlier builds could incorrectly treat adding a custom service as an explicit My Services configuration and hide the rest of the verified catalog.

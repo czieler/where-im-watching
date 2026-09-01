@@ -4,37 +4,31 @@ import {
   ComboboxOption,
   ComboboxOptions,
 } from "@headlessui/react";
-import { useState } from "react";
-
-const knownServices = [
-  "Netflix",
-  "Hulu",
-  "Max",
-  "Apple TV+",
-  "Paramount+",
-  "Peacock",
-  "Prime Video",
-  "Disney+",
-];
+import { useMemo, useState } from "react";
 
 type ServiceComboboxProps = {
   value: string;
+  services: string[];
   onChange: (service: string) => void;
 };
 
-function ServiceCombobox({ value, onChange }: ServiceComboboxProps) {
+function ServiceCombobox({ value, services, onChange }: ServiceComboboxProps) {
   const [query, setQuery] = useState("");
+
+  const uniqueServices = useMemo(
+    () => Array.from(new Set(services.filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [services],
+  );
 
   const filteredServices =
     query === ""
-      ? knownServices
-      : knownServices.filter((service) =>
+      ? uniqueServices
+      : uniqueServices.filter((service) =>
           service.toLowerCase().includes(query.toLowerCase()),
         );
 
   const trimmedQuery = query.trim();
-
-  const hasExactMatch = knownServices.some(
+  const hasExactMatch = uniqueServices.some(
     (service) => service.toLowerCase() === trimmedQuery.toLowerCase(),
   );
 
@@ -56,7 +50,19 @@ function ServiceCombobox({ value, onChange }: ServiceComboboxProps) {
           className="app-input rounded-lg border"
           placeholder=" "
           displayValue={(service: string) => service}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setQuery(nextValue);
+            // Keep the actual form value in sync with what the user can see.
+            // This prevents a visually-filled service field from secretly
+            // remaining empty when the user types instead of clicking an option.
+            onChange(nextValue);
+          }}
+          onBlur={() => {
+            const nextValue = query.trim();
+            if (nextValue) onChange(nextValue);
+            setQuery("");
+          }}
         />
 
         <label htmlFor="show-service">Streaming Service</label>
@@ -77,8 +83,14 @@ function ServiceCombobox({ value, onChange }: ServiceComboboxProps) {
               value={trimmedQuery}
               className="search-result cursor-pointer px-4 py-3 data-focus:bg-[var(--theme-hover)]"
             >
-              Use "{trimmedQuery}"
+              Use &quot;{trimmedQuery}&quot;
             </ComboboxOption>
+          )}
+
+          {!trimmedQuery && filteredServices.length === 0 && (
+            <div className="px-4 py-3 text-sm opacity-60">
+              Type a streaming service name to add one.
+            </div>
           )}
         </ComboboxOptions>
       </div>

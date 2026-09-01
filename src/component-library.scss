@@ -325,3 +325,19 @@
     padding-left: 1rem;
   }
 }
+
+.field--compact {
+  input {
+    height: 2.5rem;
+    padding: 1rem 0.8rem 0.25rem;
+  }
+
+  label {
+    top: 0.65rem;
+  }
+
+  input:focus + label,
+  input:not(:placeholder-shown) + label {
+    top: 0.2rem;
+  }
+}

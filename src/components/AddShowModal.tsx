@@ -5,7 +5,8 @@ import {
   ComboboxOptions,
 } from "@headlessui/react";
 import { ChevronDown, ImageOff } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { LAST_SERVICE_KEY } from "../services/streamingServices";
 import type { NewShow, Show, ShowStatus } from "../types/show";
 import useShowSearch from "../hooks/useShowSearch";
 import type { TVMazeShow } from "../services/tvmaze";
@@ -17,19 +18,29 @@ import { TextInput } from "./component-library/TextInput";
 type AddShowModalProps = {
   show?: Show;
   initialStatus?: ShowStatus;
+  serviceOptions: string[];
   onClose: () => void;
-  onSave: (show: NewShow) => void;
+  onSave: (show: NewShow) => boolean | Promise<boolean>;
+  onServiceUsed?: (service: string) => void | Promise<void>;
 };
 
 function AddShowModal({
   show,
   initialStatus = "watching",
+  serviceOptions,
   onClose,
   onSave,
+  onServiceUsed,
 }: AddShowModalProps) {
   const [title, setTitle] = useState(show?.title ?? "");
   const [status, setStatus] = useState<ShowStatus>(initialStatus);
-  const [service, setService] = useState(show?.service ?? "Hulu");
+  const defaultService = useMemo(() => {
+    if (show?.service) return show.service;
+    const lastService = localStorage.getItem(LAST_SERVICE_KEY);
+    if (lastService && serviceOptions.includes(lastService)) return lastService;
+    return serviceOptions[0] ?? "";
+  }, [serviceOptions, show?.service]);
+  const [service, setService] = useState(defaultService);
   const [season, setSeason] = useState(
     show?.season === undefined ? "" : String(show.season),
   );
@@ -41,6 +52,9 @@ function AddShowModal({
   );
   const [notes, setNotes] = useState(show?.notes ?? "");
   const [selectedShow, setSelectedShow] = useState<TVMazeShow | null>(null);
+  const [addAnother, setAddAnother] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const { searchResults, isSearching, searchError } = useShowSearch(
     selectedShow ? "" : title,
@@ -50,42 +64,87 @@ function AddShowModal({
     setSelectedShow(selected);
     if (selected) {
       setTitle(selected.name);
+      setSubmitError("");
     }
   };
 
-  const handleSubmit = () => {
+  const resetForAnother = () => {
+    setTitle("");
+    setSelectedShow(null);
+    setSeason("");
+    setEpisode("");
+    setStreamingProfile("");
+    setNotes("");
+  };
+
+  const handleSubmit = async () => {
     const parseProgress = (value: string) =>
       value === "" ? undefined : Number(value);
     const cleanOptionalText = (value: string) => value.trim() || undefined;
+    const cleanService = service.trim();
 
-    if (show) {
-      onSave({
-        ...show,
-        service,
-        status,
-        season: parseProgress(season),
-        episode: parseProgress(episode),
-        streamingProfile: cleanOptionalText(streamingProfile),
-        notes: cleanOptionalText(notes),
-      });
+    if (!show && !selectedShow) {
+      setSubmitError("Please select a show from the search results.");
       return;
     }
 
-    if (!selectedShow) {
+    if (!cleanService) {
+      setSubmitError("Please choose or enter a streaming service.");
       return;
     }
 
-    onSave({
-      id: selectedShow.id,
-      title: selectedShow.name,
-      service,
-      status,
-      imageUrl: selectedShow.image?.medium,
-      season: parseProgress(season),
-      episode: parseProgress(episode),
-      streamingProfile: cleanOptionalText(streamingProfile),
-      notes: cleanOptionalText(notes),
-    });
+    setSubmitError("");
+    setIsSaving(true);
+
+    try {
+      const payload: NewShow = show
+        ? {
+            ...show,
+            service: cleanService,
+            status,
+            season: parseProgress(season),
+            episode: parseProgress(episode),
+            streamingProfile: cleanOptionalText(streamingProfile),
+            notes: cleanOptionalText(notes),
+          }
+        : {
+            id: selectedShow!.id,
+            title: selectedShow!.name,
+            service: cleanService,
+            status,
+            imageUrl:
+              selectedShow!.image?.medium ?? selectedShow!.image?.original,
+            season: parseProgress(season),
+            episode: parseProgress(episode),
+            streamingProfile: cleanOptionalText(streamingProfile),
+            notes: cleanOptionalText(notes),
+          };
+
+      const saved = await onSave(payload);
+      if (!saved) {
+        setSubmitError(
+          show
+            ? "Unable to save your changes. Please try again."
+            : "Unable to add this show. It may already be in your list.",
+        );
+        return;
+      }
+
+      localStorage.setItem(LAST_SERVICE_KEY, cleanService);
+      try {
+        await onServiceUsed?.(cleanService);
+      } catch (serviceError) {
+        console.error("Show saved, but the streaming-service preference could not be updated:", serviceError);
+      }
+
+      if (!show && addAnother) {
+        resetForAnother();
+      } else {
+        onClose();
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const canEditProgress = status === "watching" || status === "onHold";
@@ -93,9 +152,9 @@ function AddShowModal({
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit();
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
         }}
         className="modal max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl p-6 shadow-lg"
       >
@@ -104,31 +163,23 @@ function AddShowModal({
         <div className="mt-6">
           {!show && (
             <>
-              <Combobox
-                immediate
-                value={selectedShow}
-                onChange={handleShowSelected}
-              >
+              <Combobox immediate value={selectedShow} onChange={handleShowSelected}>
                 <div className="pretty-placeholder relative">
                   <ComboboxInput
                     id="show-title"
                     required
                     className="app-input rounded-lg border"
                     placeholder=" "
-                    displayValue={(value: TVMazeShow | null) =>
-                      value?.name ?? title
-                    }
-                    onChange={(e) => {
-                      setTitle(e.target.value);
+                    displayValue={(value: TVMazeShow | null) => value?.name ?? title}
+                    onChange={(event) => {
+                      setTitle(event.target.value);
                       setSelectedShow(null);
                     }}
                   />
                   <label htmlFor="show-title">Show Title</label>
 
                   <ComboboxOptions className="search-results absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border shadow-lg empty:hidden">
-                    {isSearching && (
-                      <div className="p-3 text-sm">Searching...</div>
-                    )}
+                    {isSearching && <div className="p-3 text-sm">Searching...</div>}
                     {!isSearching &&
                       searchResults.map((result) => (
                         <ComboboxOption
@@ -154,8 +205,7 @@ function AddShowModal({
                               {(result.network || result.webChannel) && (
                                 <>
                                   {" · "}
-                                  {result.network?.name ??
-                                    result.webChannel?.name}
+                                  {result.network?.name ?? result.webChannel?.name}
                                 </>
                               )}
                             </div>
@@ -194,14 +244,11 @@ function AddShowModal({
                     )}
                     {(selectedShow.network || selectedShow.webChannel) && (
                       <p className="mt-1 text-sm">
-                        {selectedShow.network?.name ??
-                          selectedShow.webChannel?.name}
+                        {selectedShow.network?.name ?? selectedShow.webChannel?.name}
                       </p>
                     )}
                     {selectedShow.genres.length > 0 && (
-                      <p className="mt-1 text-sm">
-                        {selectedShow.genres.join(" · ")}
-                      </p>
+                      <p className="mt-1 text-sm">{selectedShow.genres.join(" · ")}</p>
                     )}
                   </div>
                 </div>
@@ -234,7 +281,7 @@ function AddShowModal({
               id="show-status"
               label="Status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as ShowStatus)}
+              onChange={(event) => setStatus(event.target.value as ShowStatus)}
               dropdownIcon={<ChevronDown size={18} />}
             >
               <option value="watching">Watching</option>
@@ -253,7 +300,7 @@ function AddShowModal({
                 min="1"
                 step="1"
                 value={season}
-                onChange={(e) => setSeason(e.target.value)}
+                onChange={(event) => setSeason(event.target.value)}
               />
               <TextInput
                 id="show-episode"
@@ -262,13 +309,20 @@ function AddShowModal({
                 min="1"
                 step="1"
                 value={episode}
-                onChange={(e) => setEpisode(e.target.value)}
+                onChange={(event) => setEpisode(event.target.value)}
               />
             </div>
           )}
 
           <div className="mt-4">
-            <ServiceCombobox value={service} onChange={setService} />
+            <ServiceCombobox
+              value={service}
+              services={serviceOptions}
+              onChange={(nextService) => {
+                setService(nextService);
+                if (nextService.trim()) setSubmitError("");
+              }}
+            />
           </div>
 
           <div className="mt-4">
@@ -276,7 +330,7 @@ function AddShowModal({
               id="show-streaming-profile"
               label="Streaming Profile"
               value={streamingProfile}
-              onChange={(e) => setStreamingProfile(e.target.value)}
+              onChange={(event) => setStreamingProfile(event.target.value)}
               helperText="Optional — for example, “Mine,” “Spouse,” or “Kids.”"
             />
           </div>
@@ -286,22 +340,44 @@ function AddShowModal({
               id="show-notes"
               label="Notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(event) => setNotes(event.target.value)}
               rows={4}
             />
           </div>
         </div>
 
+        {submitError && (
+          <p className="app-error mt-4 text-sm" role="alert">
+            {submitError}
+          </p>
+        )}
+
+        {!show && (
+          <label className="mt-5 flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={addAnother}
+              onChange={(event) => setAddAnother(event.target.checked)}
+            />
+            <span>Add another show after saving</span>
+          </label>
+        )}
+
         <div className="mt-6 flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="btn btn-default">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-default"
+            disabled={isSaving}
+          >
             Cancel
           </button>
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={!show && !selectedShow}
+            disabled={isSaving}
           >
-            {show ? "Save" : "Add"}
+            {isSaving ? "Saving..." : show ? "Save" : "Add"}
           </button>
         </div>
       </form>

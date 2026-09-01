@@ -1,9 +1,9 @@
-import { ChevronDown, List, X } from "lucide-react";
+import { ChevronDown, List, X, Tv, Clapperboard, ShieldCheck } from "lucide-react";
 import AccountMenu from "../account/AccountMenu";
 import type { AccountPage } from "../account/AccountMenu";
 import type { Theme } from "../../types/theme";
 
-type Page = "list" | "profile" | "help" | "privacy";
+type Page = "list" | "services" | "roadmap" | "admin" | "profile" | "help" | "privacy";
 
 type MobileMenuProps = {
   currentPage: Page;
@@ -11,6 +11,8 @@ type MobileMenuProps = {
   isAccountOpen: boolean;
   isGuest: boolean;
   theme: Theme;
+  isAdmin: boolean;
+  pendingAdminCount: number;
   onClose: () => void;
   onSelectPage: (page: Page) => void;
   onToggleAccount: () => void;
@@ -25,6 +27,8 @@ function MobileMenu({
   isAccountOpen,
   isGuest,
   theme,
+  isAdmin,
+  pendingAdminCount,
   onClose,
   onSelectPage,
   onToggleAccount,
@@ -55,6 +59,35 @@ function MobileMenu({
           <List className="h-5 w-5" />
           <span>My List</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectPage("services")}
+          className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "services" ? "nav-item-active" : ""}`}
+        >
+          <Tv className="h-5 w-5" />
+          <span>My Services</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectPage("roadmap")}
+          className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "roadmap" ? "nav-item-active" : ""}`}
+        >
+          <Clapperboard className="h-5 w-5" />
+          <span>Coming Soon</span>
+        </button>
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => onSelectPage("admin")}
+            className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "admin" ? "nav-item-active" : ""}`}
+          >
+            <ShieldCheck className="h-5 w-5" />
+            <span className="flex flex-1 items-center justify-between">Admin{pendingAdminCount > 0 && <span className="rounded-full border px-2 py-0.5 text-xs">{pendingAdminCount}</span>}</span>
+          </button>
+        )}
 
         <div className="mb-6">
           <AccountMenu

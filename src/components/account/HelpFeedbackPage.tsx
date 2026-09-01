@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { APP_VERSION } from "../../constants/appVersion";
 import { supabase } from "../../lib/supabaseClient";
 import type { Theme } from "../../types/theme";
 import {
@@ -298,7 +299,7 @@ function HelpFeedbackPage({ theme }: HelpFeedbackPageProps) {
       </div>
 
       <div className="mt-8 border-t pt-5 text-sm opacity-50">
-        Where I'm Watching · Version 0.1.0
+        Where I'm Watching · Version {APP_VERSION}
       </div>
     </AccountPageContainer>
   );

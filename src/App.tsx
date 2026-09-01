@@ -15,12 +15,18 @@ import AddShowModal from "./components/AddShowModal";
 import ProfilePage from "./components/account/ProfilePage";
 import HelpFeedbackPage from "./components/account/HelpFeedbackPage";
 import PrivacyDataPage from "./components/account/PrivacyDataPage";
+import MyServicesPage from "./components/services/MyServicesPage";
+import ComingNextSeasonPage from "./components/roadmap/ComingNextSeasonPage";
+import AdminServicesPage from "./components/admin/AdminServicesPage";
+import VersionUpdatePrompt from "./components/system/VersionUpdatePrompt";
+import { useStreamingServices } from "./hooks/useStreamingServices";
+import { useAppVersion } from "./hooks/useAppVersion";
 import type { AccountPage } from "./components/account/AccountMenu";
 import type { Show, NewShow, ShowStatus } from "./types/show";
 import type { Theme } from "./types/theme";
 import { Menu, Plus } from "lucide-react";
 
-type Page = "list" | "profile" | "help" | "privacy";
+type Page = "list" | "services" | "roadmap" | "admin" | "profile" | "help" | "privacy";
 type AppMode =
   | "loading"
   | "auth"
@@ -72,6 +78,9 @@ function clearAuthCallbackFromUrl() {
 
 const pageTitles: Record<Page, string> = {
   list: "My List",
+  services: "My Services",
+  roadmap: "Coming Soon",
+  admin: "Pending Services",
   profile: "Profile",
   help: "Help & Feedback",
   privacy: "Privacy & Data",
@@ -214,6 +223,17 @@ function App() {
   const [wantToWatch, setWantToWatch] = useState<Show[]>([]);
   const [completed, setCompleted] = useState<Show[]>([]);
   const [onHold, setOnHold] = useState<Show[]>([]);
+
+  const watchlistServiceNames = Array.from(
+    new Set([...watching, ...wantToWatch, ...completed, ...onHold].map((show) => show.service)),
+  );
+
+  const streamingServices = useStreamingServices({
+    mode: appMode === "account" ? "account" : "guest",
+    user,
+    watchlistServices: watchlistServiceNames,
+  });
+  const appVersion = useAppVersion();
 
   const serviceOptions = Array.from(
     new Set(
@@ -376,14 +396,14 @@ function App() {
             ? "That show is already in your list."
             : "Unable to save show.",
         );
-        return;
+        return false;
       }
 
       setAccountWatchlistError("");
     }
 
     addShowToState(show, status);
-    setIsAddOpen(false);
+    return true;
   };
 
   const handleEditShow = async (updatedShow: NewShow) => {
@@ -405,7 +425,7 @@ function App() {
 
       if (error) {
         setAccountWatchlistError("Unable to save show changes.");
-        return;
+        return false;
       }
 
       setAccountWatchlistError("");
@@ -427,7 +447,7 @@ function App() {
       updatedShow.status,
     );
 
-    setShowToEdit(null);
+    return true;
   };
 
   const handleRemoveShow = async (id: number) => {
@@ -548,6 +568,8 @@ function App() {
     setHasDismissedMigrationPrompt(false);
     setShouldShowMigrationPrompt(false);
     setAuthMessage("");
+    setCurrentPage("list");
+    setIsAccountOpen(false);
     setAppMode("auth");
   };
 
@@ -632,6 +654,8 @@ function App() {
 
       if (event === "SIGNED_OUT") {
         setUser(null);
+        setCurrentPage("list");
+        setIsAccountOpen(false);
         hasDismissedMigrationPromptRef.current = false;
         setHasDismissedMigrationPrompt(false);
         setShouldShowMigrationPrompt(false);
@@ -735,6 +759,22 @@ function App() {
     };
   }, [appMode, user, setWatchlistState]);
 
+  useEffect(() => {
+    if (
+      currentPage === "admin" &&
+      (appMode !== "account" ||
+        (!streamingServices.isLoading && !streamingServices.isAdmin))
+    ) {
+      setCurrentPage("list");
+      setIsAccountOpen(false);
+    }
+  }, [
+    appMode,
+    currentPage,
+    streamingServices.isAdmin,
+    streamingServices.isLoading,
+  ]);
+
   if (appMode === "loading") {
     return null;
   }
@@ -755,6 +795,8 @@ function App() {
           onGuestContinue={() => {
             setAuthMessage("");
             setUser(null);
+            setCurrentPage("list");
+            setIsAccountOpen(false);
             localStorage.setItem("guestMode", "true");
             loadGuestWatchlist();
             setAppMode("guest");
@@ -781,6 +823,8 @@ function App() {
         isAccountOpen={isAccountOpen}
         isGuest={appMode === "guest"}
         isCollapsed={isSidebarCollapsed}
+        isAdmin={streamingServices.isAdmin}
+        pendingAdminCount={streamingServices.pendingAdminCount}
         isThemeMenuOpen={isThemeMenuOpen}
         theme={theme}
         onSelectPage={selectPage}
@@ -893,6 +937,32 @@ function App() {
           </main>
         )}
 
+        {currentPage === "services" && (
+          <MyServicesPage
+            services={streamingServices.manageableServices}
+            selectedNames={
+              streamingServices.isConfigured
+                ? streamingServices.personalServices
+                : streamingServices.effectiveServices
+            }
+            isConfigured={streamingServices.isConfigured}
+            isLoading={streamingServices.isLoading}
+            isGuest={appMode === "guest"}
+            error={streamingServices.error}
+            onToggle={streamingServices.toggleService}
+            onAddCustom={streamingServices.addCustomService}
+          />
+        )}
+
+        {currentPage === "roadmap" && <ComingNextSeasonPage />}
+
+        {currentPage === "admin" && streamingServices.isAdmin && (
+          <AdminServicesPage
+            verifiedServices={streamingServices.verifiedServices}
+            onCatalogChanged={streamingServices.refresh}
+          />
+        )}
+
         {currentPage === "profile" && (
           <ProfilePage
             user={user}
@@ -931,6 +1001,8 @@ function App() {
           isAccountOpen={isAccountOpen}
           isGuest={appMode === "guest"}
           theme={theme}
+          isAdmin={streamingServices.isAdmin}
+          pendingAdminCount={streamingServices.pendingAdminCount}
           onClose={() => setIsMobileMenuOpen(false)}
           onSelectPage={selectPage}
           onToggleAccount={() => setIsAccountOpen((current) => !current)}
@@ -942,8 +1014,10 @@ function App() {
 
       {isAddOpen && (
         <AddShowModal
+          serviceOptions={streamingServices.effectiveServices}
           onClose={() => setIsAddOpen(false)}
           onSave={handleAddShow}
+          onServiceUsed={streamingServices.ensureService}
         />
       )}
 
@@ -951,8 +1025,10 @@ function App() {
         <AddShowModal
           show={showToEdit.show}
           initialStatus={showToEdit.status}
+          serviceOptions={streamingServices.effectiveServices}
           onClose={() => setShowToEdit(null)}
           onSave={handleEditShow}
+          onServiceUsed={streamingServices.ensureService}
         />
       )}
 
@@ -970,6 +1046,13 @@ function App() {
             }}
           />
         )}
+
+      {appVersion.updateAvailable && (
+        <VersionUpdatePrompt
+          latestVersion={appVersion.latestVersion}
+          onRefresh={appVersion.refresh}
+        />
+      )}
     </div>
   );
 }

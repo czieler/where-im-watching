@@ -8,6 +8,7 @@ type TextInputProps = InputHTMLAttributes<HTMLInputElement> & {
   onClear?: () => void;
   clearIcon?: ReactNode;
   requiredIndicatorPosition?: "bottom" | "left";
+  compact?: boolean;
 };
 
 export function TextInput({
@@ -18,6 +19,7 @@ export function TextInput({
   onClear,
   clearIcon = "×",
   requiredIndicatorPosition = "bottom",
+  compact = false,
   id: providedId,
   className = "",
   "aria-describedby": ariaDescribedby,
@@ -41,7 +43,7 @@ export function TextInput({
           : ""
       } ${inputProps.disabled ? "field--disabled" : ""} ${
         error ? "field--error" : ""
-      }`}
+      } ${compact ? "field--compact" : ""}`}
     >
       <div className="field__control">
         <input
