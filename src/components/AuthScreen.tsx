@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import wiwLogo from "../assets/wiw_logo.png";
 import { supabase } from "../lib/supabaseClient";
+import { getAuthRedirectUrl } from "../utils/nativeAuth";
 
 type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
@@ -51,7 +52,7 @@ function AuthScreen({
     try {
       if (isForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin,
+          redirectTo: getAuthRedirectUrl(),
         });
 
         if (error) {
@@ -75,6 +76,9 @@ function AuthScreen({
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl(),
+          },
         });
 
         if (error) {

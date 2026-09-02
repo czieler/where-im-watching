@@ -59,6 +59,39 @@ The project is also a hands-on exploration of modern React and TypeScript develo
 - **Tailwind CSS** + **SCSS** + CSS custom properties
 - **Headless UI** — accessible combobox interactions
 - **Lucide React** — icons
+- **Capacitor** — native iOS packaging and device integration
+
+## iPhone / Capacitor Development
+
+The repository includes a generated Capacitor iOS project under `ios/` with
+the bundle identifier `com.czielerworks.whereimwatching`.
+
+After changing the React application, update the native project with:
+
+```bash
+npm run mobile:sync
+```
+
+On a Mac with Xcode installed, open the native project with:
+
+```bash
+npm run mobile:open
+```
+
+In Xcode, select an Apple Development team under **Signing & Capabilities**,
+choose an iPhone simulator or connected device, and run the `App` scheme.
+
+The iOS wrapper includes safe-area padding, native status-bar handling, and a
+custom authentication callback URL. Add the following redirect URL to the
+Supabase project's **Authentication → URL Configuration → Redirect URLs**:
+
+```text
+com.czielerworks.whereimwatching://auth/callback
+```
+
+Email confirmation and password-recovery requests automatically use this URL
+inside the native app while continuing to use the deployed web origin in a
+browser.
 
 ## Architecture & Technical Highlights
 

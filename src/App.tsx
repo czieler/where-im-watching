@@ -25,6 +25,7 @@ import type { AccountPage } from "./components/account/AccountMenu";
 import type { Show, NewShow, ShowStatus } from "./types/show";
 import type { Theme } from "./types/theme";
 import { Menu, Plus } from "lucide-react";
+import { initializeNativeApp } from "./utils/nativeApp";
 
 type Page = "list" | "services" | "roadmap" | "admin" | "profile" | "help" | "privacy";
 type AppMode =
@@ -198,6 +199,27 @@ function App() {
     appModeRef.current = appMode;
     userRef.current = user;
   }, [appMode, user]);
+
+  useEffect(() => {
+    const removeNativeListeners = initializeNativeApp();
+    const handleNativePasswordRecovery = () => {
+      localStorage.removeItem("guestMode");
+      setAppMode("passwordRecovery");
+    };
+
+    window.addEventListener(
+      "wiw:native-password-recovery",
+      handleNativePasswordRecovery,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "wiw:native-password-recovery",
+        handleNativePasswordRecovery,
+      );
+      void removeNativeListeners.then((remove) => remove());
+    };
+  }, []);
 
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
