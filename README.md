@@ -1,149 +1,94 @@
 # Where I'm Watching
 
-**Live:** https://wiw.czielerworks.app
+**A responsive watchlist for remembering what you're watching, where you're watching it, and where you left off.**
 
+[Live app](https://wiw.czielerworks.app) · [Architecture & workflows](ARCHITECTURE.md) · [iOS deployment model](docs/IOS_DEPLOYMENT.md)
 
-A responsive React + TypeScript application for keeping track of TV shows across streaming services — including where you're watching them, which streaming profile you're using, and where you left off.
+![Where I'm Watching desktop and mobile screenshots](src/assets/readme-screens.png)
 
-![Where I'm Watching application screenshots](src/assets/readme-screens.png)
-
-## Why I Built It
+## Overview
 
 Where I'm Watching started with a simple problem: **Where was I watching that show again?**
 
-Streaming libraries are spread across services, household members may use different profiles on the same account, and it is easy to forget where a show lives or which episode you reached. Where I'm Watching provides one place to keep that information together.
+Streaming libraries are spread across services, household members may use different profiles, and it is easy to lose track of a show's service or viewing progress. The app brings that information together in one place.
 
-The project is also a hands-on exploration of modern React and TypeScript development, reusable component design, authentication, cloud-backed persistence, third-party APIs, transactional email, and production-minded account/privacy flows.
+The project is also a portfolio demonstration of modern front-end engineering: React and TypeScript, reusable UI components, responsive design, authentication, cloud persistence, third-party APIs, serverless functions, transactional email, privacy/account workflows, and a Capacitor iOS release.
 
-## Current Features
+## Highlights
 
-- Responsive desktop and mobile layouts
-- Watching, Want to Watch, Completed, and On Hold lists
-- Search and filtering by title and streaming service
-- TV show lookup and metadata through the TVmaze API
-- Debounced API search with artwork and metadata results
-- Add, edit, move, and remove watchlist entries
-- Season and episode progress tracking
-- Streaming service and optional streaming-profile tracking
-- Personal **My Services** preferences so Add Show prioritizes services a user actually has
-- Last-used streaming service remembered when adding another show
-- User-submitted streaming services with private/pending use before admin verification
-- Guest custom services remain private to that browser while the full verified catalog stays available unless the guest explicitly customizes My Services
-- Admin service moderation workflow: approve, merge duplicates, or keep a service private; approved services join the shared catalog for everyone
-- Expandable per-show notes
+- Responsive desktop and mobile watchlists with Watching, Want to Watch, Completed, and On Hold sections
+- TV show search and metadata through TVmaze with debounced autocomplete
+- Season/episode progress, streaming service, streaming profile, and expandable notes
+- Search/filtering plus a two-column mobile table optimized for **Show Info + Actions**
+- Guest Mode with local persistence and Account Mode with Supabase-backed sync
+- Guest-to-account migration with duplicate handling
+- My Services preferences, remembered last-used service, and custom service submission
+- Admin moderation for submitted services: approve, merge, or reject
+- Supabase authentication, branded Resend email, password recovery/change, data export, and secure account deletion
+- Help/FAQ plus bug reports, feature requests, and general feedback
 - Light, Dark, and Blues themes with persisted preferences
-- Guest Mode with local browser persistence
-- Supabase account creation, sign in, sign out, and persistent sessions
-- Cloud-backed watchlist storage for authenticated users
-- Guest-to-account watchlist migration with duplicate handling
-- Email confirmation and password-recovery flows
-- Branded authentication email delivery through Resend
-- Change-password support
-- Download My Data JSON export
-- Secure account deletion through a Supabase Edge Function
-- Help & FAQ
-- Bug reports, feature requests, and general feedback delivered through a Supabase Edge Function and Resend
-- Consistent required-field and error-state styling
-- Reusable account layouts, feedback forms, success states, dialogs, form controls, and data tables
-- “Add another show” workflow for rapid list entry
-- Database-backed app-version checking with a themed refresh prompt when a new deployment is available
-- In-app **Coming Soon / Future Seasons** roadmap
+- Reusable form controls, dialogs, account layouts, feedback states, and responsive data tables
+- Hosted Capacitor iOS shell tested through TestFlight
+- Database-backed deployment version awareness
 
 ## Tech Stack
 
-- **React** + **TypeScript**
-- **Vite**
-- **Supabase** — authentication, PostgreSQL persistence, Edge Functions
-- **Resend** — transactional authentication and support email
-- **TVmaze API** — TV search and metadata
-- **Tailwind CSS** + **SCSS** + CSS custom properties
-- **Headless UI** — accessible combobox interactions
-- **Lucide React** — icons
-- **Capacitor** — native iOS packaging and device integration
+| Area | Technology |
+| --- | --- |
+| Front end | React 19, TypeScript, Vite |
+| UI | Tailwind CSS, SCSS, CSS custom properties, Headless UI, Lucide React |
+| Backend | Supabase Auth, PostgreSQL, Row Level Security, Edge Functions |
+| External services | TVmaze API, Resend |
+| Mobile | Capacitor 8, iOS, TestFlight |
+| Delivery | Render for the hosted app, Codemagic for native iOS builds |
 
-## iPhone / Capacitor Development
+## Architecture
 
-The repository includes a generated Capacitor iOS project under `ios/` with
-the bundle identifier `com.czielerworks.whereimwatching`.
+The production React application is hosted at `https://wiw.czielerworks.app`. Browser users load it directly, and the Capacitor iOS shell loads the same production URL. That keeps normal web and iPhone releases on the same React application version.
 
-After changing the React application, update the native project with:
+Guest watchlists live in `localStorage`. Authenticated users persist their watchlist and service preferences in Supabase. Supabase Edge Functions handle operations that should not expose privileged credentials to the browser, including account deletion, feedback delivery, and streaming-service moderation workflows.
 
-```bash
-npm run mobile:sync
-```
+See [ARCHITECTURE.md](ARCHITECTURE.md) for database, application, moderation, and release diagrams.
 
-On a Mac with Xcode installed, open the native project with:
+## Product & Engineering Details
 
-```bash
-npm run mobile:open
-```
+### Guest and account modes
 
-In Xcode, select an Apple Development team under **Signing & Capabilities**,
-choose an iPhone simulator or connected device, and run the `App` scheme.
+Users can try the core watchlist without registering. If a guest later creates an account or signs in, the app can migrate the local watchlist into Supabase while respecting the database's duplicate rules.
 
-The iOS wrapper includes safe-area padding, native status-bar handling, and a
-custom authentication callback URL. Add the following redirect URL to the
-Supabase project's **Authentication → URL Configuration → Redirect URLs**:
+### Streaming-service catalog
+
+Verified services are shared across users while My Services stores each user's preferences. Missing services can be submitted without immediately exposing unverified values globally. Administrators can approve a submission, merge it into an existing service, or reject it.
+
+### Account lifecycle and privacy
+
+Supabase Auth handles registration, confirmation, sessions, and password recovery. The app also supports password changes, downloadable JSON account data, and secure account deletion through an Edge Function.
+
+### Responsive component design
+
+Reusable components cover forms, comboboxes, dialogs, account-page layouts, feedback states, and data tables. On mobile, the watchlist intentionally collapses to **Show Info** and **Actions**; progress, service, and profile move into Show Info rather than forcing horizontal scrolling.
+
+### Accessibility
+
+The UI uses semantic labels for form controls and icon-only actions, keyboard-visible focus states, ARIA state for expandable content, accessible modal/dialog behavior with focus management, and current-page state in primary navigation.
+
+### Deployment awareness
+
+The frontend has an application version and Supabase stores the deployed version in `app_config`. Version components are compared numerically so `1.2` and `1.2.0` are equivalent and a newer client cannot be prompted to downgrade.
+
+## iOS / Capacitor
+
+The repository includes a Capacitor iOS shell using bundle identifier `com.czielerworks.whereimwatching`. It loads the hosted production application, so normal React/TypeScript/UI releases are delivered through Render without another TestFlight build.
+
+A new Codemagic/TestFlight/App Store build is still required for native-shell changes such as Capacitor configuration or plugins, iOS permissions/entitlements, signing, native code, or native icons/splash assets.
+
+Authentication callbacks use:
 
 ```text
 com.czielerworks.whereimwatching://auth/callback
 ```
 
-Email confirmation and password-recovery requests automatically use this URL
-inside the native app while continuing to use the deployed web origin in a
-browser.
-
-## Architecture & Technical Highlights
-
-### Reusable Component Design
-
-The application favors reusable components over page-specific duplication. Shared pieces include form controls, data tables, confirmation dialogs, account-page layouts, feedback forms, illustrated message states, and feedback success states.
-
-A separate `component-library` project is maintained alongside Where I'm Watching. Reusable controls from that project are integrated here while application-specific components remain focused on product behavior.
-
-### Guest and Account Modes
-
-Guest users can use the core watchlist without registering; their data is stored in `localStorage`. Authenticated users persist their watchlist in Supabase so it can be accessed independently of a particular browser.
-
-When a guest later signs in or creates an account, the application can migrate the local watchlist into the authenticated account while handling duplicates.
-
-### Authentication & Account Lifecycle
-
-Supabase Auth provides account creation, email confirmation, sign in/out, persistent sessions, and password recovery. Resend is configured as the custom SMTP provider for branded authentication emails.
-
-The project also implements production-oriented account lifecycle features: password changes, downloadable account data, and secure account deletion. Account deletion is performed server-side by a Supabase Edge Function rather than exposing administrative credentials to the browser.
-
-### Feedback & Support
-
-Bug reports, feature requests, and general feedback share reusable React form/success components. Submissions are sent to a Supabase Edge Function, which uses a restricted Resend API key stored as a server-side secret to deliver messages to the application's support address.
-
-### Data Tables & Watchlist State
-
-A reusable table component provides collapsible status sections, column headers, expandable rows, and optional detail content. Where I'm Watching uses row expansion for notes so additional information remains available without permanently crowding the primary list.
-
-Watchlist changes use immutable React state updates. Changing a show's status moves the updated entry between status collections while keeping the UI synchronized with the active persistence mode.
-
-### Theming
-
-CSS custom properties define semantic colors for backgrounds, surfaces, borders, text, accents, and interactive states. The selected theme persists in `localStorage`, and theme-aware assets can switch with the application's selected theme.
-
-### TV Show Search
-
-TVmaze powers show search and metadata. Requests are debounced to avoid sending an API call for every keystroke. Search results provide artwork and useful metadata while fallback states handle missing images.
-
-### Streaming Profiles
-
-In addition to recording a streaming service, a show can optionally record the profile used within a shared account. This addresses cases where multiple people share one Netflix/Hulu/etc. subscription but maintain separate viewing profiles.
-
-### Streaming Service Catalog & Moderation
-
-Version 1.1 separates the shared streaming-service catalog from each user's personal service preferences. Verified services are available to everyone, while users can immediately use a newly submitted service without exposing it globally. Guest users begin with the full verified catalog plus any browser-private custom services; the list narrows only after they explicitly change selections on My Services. Signed-in submissions are queued for admin review and can be approved, merged into an existing service, or kept private. Guest preferences stay in `localStorage`; account preferences sync through Supabase.
-
-New service submissions trigger a server-side Resend notification so moderation does not depend on manually checking the database. Admin status is stored server-side rather than inferred from client-side configuration.
-
-### Deployment Version Awareness
-
-The frontend identifies itself with an application version while Supabase stores the currently deployed version in `app_config`. The app periodically checks the database and, when the versions differ, displays a themed **“A new season has been deployed”** refresh prompt. This prevents long-lived browser tabs from quietly remaining on stale frontend code.
+See [docs/IOS_DEPLOYMENT.md](docs/IOS_DEPLOYMENT.md) for the release workflow.
 
 ## Project Structure
 
@@ -151,94 +96,63 @@ The frontend identifies itself with an application version while Supabase stores
 src/
   components/
     account/             Account, privacy, help, and feedback UI
+    admin/               Streaming-service moderation
     component-library/   Reusable form and data-display controls
     layout/              Sidebar and mobile navigation
-    watchlist/           Watchlist-specific controls
+    roadmap/             In-app roadmap
+    services/            My Services UI
+    system/              Application-level system UI
+    watchlist/           Watchlist filters and controls
+  constants/             Application constants/version
   hooks/                 Reusable React hooks
   lib/                   Supabase client configuration
-  services/              External API integrations
+  services/              API/data-service modules
   types/                 Shared TypeScript types
-  utils/                 Shared utilities
+  utils/                 Shared utilities and native helpers
 supabase/
-  functions/
-    admin-services/      Admin moderation for submitted services
-    delete-account/      Secure account/data deletion
-    submit-feedback/     Server-side support email delivery
-    submit-service/      Authenticated service submission + email alert
-  migrations/            Versioned schema/data changes
+  functions/             Edge Functions
+  migrations/            Versioned database changes
+docs/
+  diagrams/              Maintainable diagram source files
+  images/                Rendered architecture diagrams
+  IOS_DEPLOYMENT.md      Hosted-web vs native-build release rules
 ```
 
-## Development
+## Local Development
 
-Create a local `.env.local` containing the public Supabase values required by the Vite application. Secrets such as service-role credentials and Resend API keys belong in Supabase/Resend configuration and are **not** stored in the client repository.
-
-```bash
-npm install
-npm run dev
-```
-
-Create a production build with:
-
-```bash
-npm run build
-```
-
-## Coming Next Season
-
-The web app is live and Version 1.1 focuses on user-requested streaming-service personalization and production polish. The next planned season includes:
-
-- Returning/new-season notifications for tracked shows
-- Capacitor packaging for iPhone/iOS
-- TestFlight and Apple App Store release work
-- Android/Google Play packaging using the same React/Capacitor codebase
-- Additional automated unit/component testing
-- Accessibility, keyboard, and cross-browser regression testing
-
-## Future Seasons
-
-Longer-term ideas currently being explored include:
-
-- Screenshot/photo import from streaming-service “Continue Watching” screens
-- Direct streaming-service integrations where APIs and terms permit them
-- Recommendation sharing by email/SMS with per-show notes
-- Family/shared watchlists
-- Movie tracking and broader media types
-- User voting/interest signals for planned features
-- Smarter metadata caching and refresh behavior
-
-The in-app **Coming Soon** page gives users a lightweight view of planned work and points them to Feature Request when something they want is not already on the roadmap.
-
-## Version 1.1 Supabase Setup
-
-Version 1.1 adds database-backed streaming-service preferences, moderation, admin access, and deployment version awareness. Apply:
+Create `.env.local` using `.env.example` as a template:
 
 ```text
-supabase/migrations/20260901_v1_1_streaming_services.sql
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Then add the desired authenticated user to `public.app_admins` using the commented SQL at the bottom of the migration. The repository intentionally does **not** hard-code an administrator email or user ID.
+Keep service-role credentials, Resend keys, and other secrets in their server-side provider configuration rather than the client repository.
 
-Deploy the two new authenticated Edge Functions:
-
-```bash
-supabase functions deploy submit-service
-supabase functions deploy admin-services
+```text
+npm install
+npm run dev
+npm run build
+npm run lint
 ```
 
-`submit-service` reuses the existing `RESEND_API_KEY` and `SUPPORT_EMAIL` Supabase secrets. No API keys or service-role credentials belong in the client application.
+## Database / Edge Function Setup
 
-When deploying a future frontend version, update `public.app_config.current_version` after the new build is live. Existing sessions will then receive the refresh prompt.
+Database changes are versioned under `supabase/migrations/`. Edge Functions include:
 
-## Project Goals
+- `submit-service` — service submission and moderation notification
+- `admin-services` — authenticated admin moderation
+- `submit-feedback` — support/feedback email delivery
+- `delete-account` — secure account/data deletion
 
-Where I'm Watching is intended to be both a useful product and a portfolio-quality demonstration of modern front-end engineering: responsive UI, reusable component architecture, API integration, authentication, persistent application state, serverless functions, account/privacy workflows, and incremental refactoring as a product grows.
+The deployed application version is stored in `public.app_config` where `key = 'current_version'` and the release number is stored in `value`.
 
-### V1.1 service-preference repair
+## Current Release Status
 
-If you tested an earlier pre-release V1.1 build, run `supabase/migrations/20260901_v1_1_service_settings_marker_fix.sql` once and redeploy the `submit-service` Edge Function. Earlier builds could incorrectly treat adding a custom service as an explicit My Services configuration and hide the rest of the verified catalog.
+The hosted web app is live and the hosted-mode iPhone shell is working through TestFlight. Version 1.2 is being polished for App Store submission.
 
-### Streaming-service auto-add behavior
+Near-term follow-up work includes targeted automated tests, a deeper accessibility regression pass, privacy-conscious guest usage analytics, new-season notifications, and Android/Google Play packaging.
 
-- In Add Show, typing a service that already exists in the shared catalog automatically selects it for the user.
-- Typing a brand-new service submits it to Pending Services for admin review.
-- Guest users can submit new services for review too; the service remains usable locally while pending.
+## Project Goal
+
+Where I'm Watching is intended to be both a useful product and a portfolio-quality example of building and evolving a production-minded front-end application: responsive UX, reusable component architecture, API integration, authentication, persistent state, serverless workflows, account/privacy features, release management, accessibility, and iterative refactoring based on real-device testing.

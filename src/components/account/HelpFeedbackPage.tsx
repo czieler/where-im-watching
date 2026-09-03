@@ -113,6 +113,7 @@ function HelpFeedbackPage({ theme }: HelpFeedbackPageProps) {
         <div className="space-y-3">
           {faqItems.map((item, index) => {
             const isOpen = openFaq === index;
+            const answerId = `faq-answer-${index}`;
 
             return (
               <div
@@ -124,6 +125,7 @@ function HelpFeedbackPage({ theme }: HelpFeedbackPageProps) {
                   onClick={() => setOpenFaq(isOpen ? null : index)}
                   className="flex w-full items-center gap-4 p-4 text-left"
                   aria-expanded={isOpen}
+                  aria-controls={answerId}
                 >
                   <span className="flex-1 font-semibold">{item.question}</span>
 
@@ -131,7 +133,10 @@ function HelpFeedbackPage({ theme }: HelpFeedbackPageProps) {
                 </button>
 
                 {isOpen && (
-                  <div className="px-4 pb-4 text-sm leading-6 opacity-70">
+                  <div
+                    id={answerId}
+                    className="px-4 pb-4 text-sm leading-6 opacity-70"
+                  >
                     {item.answer}
                   </div>
                 )}

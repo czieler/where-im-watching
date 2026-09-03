@@ -1,0 +1,30 @@
+digraph G {
+  graph [rankdir=TB, splines=polyline, nodesep=0.5, ranksep=0.55, bgcolor="white", pad=0.25];
+  node [shape=box, style="rounded,filled", fillcolor="#f8fafc", color="#64748b", fontcolor="#0f172a", fontname="Arial", fontsize=11, margin="0.17,0.11"];
+  edge [color="#64748b", fontcolor="#334155", fontname="Arial", fontsize=9, arrowsize=0.7];
+
+  user [label="User"];
+  browser [label="Web browser"];
+  ios [label="Capacitor iOS shell"];
+  web [label="Hosted React + TypeScript app\nwiw.czielerworks.app"];
+  guest [label="Guest Mode\nlocalStorage watchlist"];
+  auth [label="Account Mode\nSupabase Auth"];
+  db [label="Supabase Database\nwatchlist · services · config"];
+  edgefn [label="Supabase Edge Functions\nfeedback · moderation · delete account"];
+  tvmaze [label="TVmaze API\nshow search"];
+
+  {rank=same; browser ios}
+  {rank=same; guest auth tvmaze}
+  {rank=same; db edgefn}
+
+  user -> browser;
+  user -> ios;
+  browser -> web [label="HTTPS"];
+  ios -> web [label="HTTPS"];
+  web -> guest [label="guest data"];
+  web -> auth [label="sign in / sign up"];
+  web -> tvmaze [label="search"];
+  auth -> db [label="authenticated data"];
+  web -> db [label="catalog + app config"];
+  web -> edgefn [label="server-side actions"];
+}

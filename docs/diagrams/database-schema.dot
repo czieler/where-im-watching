@@ -1,0 +1,27 @@
+digraph G {
+  graph [rankdir=TB, splines=polyline, nodesep=0.45, ranksep=0.55, bgcolor="white", pad=0.25];
+  node [shape=record, style="filled", fillcolor="#f8fafc", color="#64748b", fontcolor="#0f172a", fontname="Arial", fontsize=11, margin="0.14,0.09"];
+  edge [color="#64748b", fontcolor="#334155", fontname="Arial", fontsize=9, arrowsize=0.7];
+
+  auth [label="{Supabase Auth|auth.users}"];
+  shows [label="{user_shows|user_id + show_id (PK)\ltitle · service · status\limage_url · season · episode\lstreaming_profile · notes\l}"];
+  services [label="{streaming_services|id (PK)\lname · normalized_name (unique)\lstatus · submitted_by_user_id\l}"];
+  user_services [label="{user_streaming_services|user_id + service_id (PK)}"];
+  settings [label="{user_service_settings|user_id (PK)\lconfigured_at\l}"];
+  admins [label="{app_admins|user_id (PK)}"];
+  config [label="{app_config|key (PK)\lvalue · updated_at\l}"];
+  funcs [shape=box, style="rounded,filled", label="Supabase Edge Functions\nsubmit-service · admin-services\nsubmit-feedback · delete-account"];
+
+  {rank=same; shows services}
+  {rank=same; user_services settings admins config}
+
+  auth -> shows [label="user_id"];
+  auth -> services [label="submitter"];
+  auth -> user_services [label="user_id"];
+  auth -> settings [label="user_id"];
+  auth -> admins [label="user_id"];
+  services -> user_services [label="service_id"];
+  admins -> funcs [label="authorization"];
+  funcs -> services [label="moderation"];
+  funcs -> shows [label="account/admin operations"];
+}

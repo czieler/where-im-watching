@@ -42,6 +42,7 @@ function ServiceCombobox({ value, services, onChange }: ServiceComboboxProps) {
           setQuery("");
         }
       }}
+      onClose={() => setQuery("")}
     >
       <div className="pretty-placeholder relative">
         <ComboboxInput
@@ -57,11 +58,6 @@ function ServiceCombobox({ value, services, onChange }: ServiceComboboxProps) {
             // This prevents a visually-filled service field from secretly
             // remaining empty when the user types instead of clicking an option.
             onChange(nextValue);
-          }}
-          onBlur={() => {
-            const nextValue = query.trim();
-            if (nextValue) onChange(nextValue);
-            setQuery("");
           }}
         />
 

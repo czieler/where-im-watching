@@ -301,6 +301,8 @@
   color: var(--theme-text-muted);
 }
 
+
+
 .data-table__empty {
   padding: 2rem !important;
   color: var(--theme-text-muted);
@@ -339,5 +341,11 @@
   input:focus + label,
   input:not(:placeholder-shown) + label {
     top: 0.2rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .data-table__column--mobile-hidden {
+    display: none;
   }
 }

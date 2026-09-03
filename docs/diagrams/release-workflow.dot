@@ -1,0 +1,29 @@
+digraph G {
+  graph [rankdir=TB, splines=polyline, nodesep=0.5, ranksep=0.55, bgcolor="white", pad=0.25];
+  node [shape=box, style="rounded,filled", fillcolor="#f8fafc", color="#64748b", fontcolor="#0f172a", fontname="Arial", fontsize=11, margin="0.17,0.11"];
+  edge [color="#64748b", fontcolor="#334155", fontname="Arial", fontsize=9, arrowsize=0.7];
+
+  source [label="SourceTree\ncommit + push"];
+  github [label="GitHub"];
+  render [label="Render\nbuild + deploy"];
+  hosted [label="wiw.czielerworks.app\ncurrent hosted app"];
+  browser [label="Web browser"];
+  shell [label="Installed iOS\nCapacitor shell"];
+  version [label="Supabase app_config\ncurrent_version"];
+  cm [label="Codemagic\nnative-shell changes only"];
+  asc [label="App Store Connect\nTestFlight / App Store"];
+
+  {rank=same; render cm}
+  {rank=same; hosted asc}
+  {rank=same; browser shell}
+
+  source -> github;
+  github -> render [label="normal app changes"];
+  render -> hosted;
+  hosted -> browser;
+  hosted -> shell [label="HTTPS"];
+  version -> hosted [label="update check"];
+  github -> cm [label="native changes"];
+  cm -> asc;
+  asc -> shell [label="install/update shell"];
+}

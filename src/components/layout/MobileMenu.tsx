@@ -1,3 +1,4 @@
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { ChevronDown, List, X, Tv, Clapperboard, ShieldCheck } from "lucide-react";
 import AccountMenu from "../account/AccountMenu";
 import type { AccountPage } from "../account/AccountMenu";
@@ -37,12 +38,15 @@ function MobileMenu({
   onThemeChange,
 }: MobileMenuProps) {
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
-      <div className="mobile-menu-overlay absolute inset-0" onClick={onClose} />
+    <Dialog open onClose={onClose} className="relative z-50 md:hidden">
+      <DialogBackdrop className="mobile-menu-overlay fixed inset-0" />
 
-      <aside className="mobile-menu absolute left-0 top-0 h-full w-72 p-6 shadow-lg">
+      <DialogPanel
+        as="aside"
+        className="mobile-menu fixed left-0 top-0 h-full w-72 p-6 shadow-lg"
+      >
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Where I'm Watching</h2>
+          <DialogTitle className="text-lg font-bold">Where I'm Watching</DialogTitle>
 
           <button type="button" onClick={onClose} aria-label="Close menu">
             <X size={24} />
@@ -52,6 +56,7 @@ function MobileMenu({
         <button
           type="button"
           onClick={() => onSelectPage("list")}
+          aria-current={currentPage === "list" ? "page" : undefined}
           className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${
             currentPage === "list" ? "nav-item-active" : ""
           }`}
@@ -63,6 +68,7 @@ function MobileMenu({
         <button
           type="button"
           onClick={() => onSelectPage("services")}
+          aria-current={currentPage === "services" ? "page" : undefined}
           className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "services" ? "nav-item-active" : ""}`}
         >
           <Tv className="h-5 w-5" />
@@ -72,6 +78,7 @@ function MobileMenu({
         <button
           type="button"
           onClick={() => onSelectPage("roadmap")}
+          aria-current={currentPage === "roadmap" ? "page" : undefined}
           className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "roadmap" ? "nav-item-active" : ""}`}
         >
           <Clapperboard className="h-5 w-5" />
@@ -82,6 +89,7 @@ function MobileMenu({
           <button
             type="button"
             onClick={() => onSelectPage("admin")}
+          aria-current={currentPage === "admin" ? "page" : undefined}
             className={`nav-item mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left font-medium ${currentPage === "admin" ? "nav-item-active" : ""}`}
           >
             <ShieldCheck className="h-5 w-5" />
@@ -122,8 +130,8 @@ function MobileMenu({
             className="select-chevron pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
           />
         </div>
-      </aside>
-    </div>
+      </DialogPanel>
+    </Dialog>
   );
 }
 

@@ -1,0 +1,30 @@
+digraph G {
+  graph [rankdir=TB, splines=polyline, nodesep=0.45, ranksep=0.5, bgcolor="white", pad=0.25];
+  node [shape=box, style="rounded,filled", fillcolor="#f8fafc", color="#64748b", fontcolor="#0f172a", fontname="Arial", fontsize=11, margin="0.17,0.11"];
+  edge [color="#64748b", fontcolor="#334155", fontname="Arial", fontsize=9, arrowsize=0.7];
+
+  enter [label="User types / chooses a service"];
+  match [shape=diamond, style="filled", label="Catalog match?"];
+  existing [label="Select verified service"];
+  custom [label="Submit missing service"];
+  pending [label="Pending service\nremains usable"];
+  admin [label="Admin review"];
+  approve [label="Approve"];
+  merge [label="Merge"];
+  reject [label="Reject"];
+  catalog [label="Shared verified service catalog"];
+
+  {rank=same; existing custom}
+  {rank=same; approve merge reject}
+
+  enter -> match;
+  match -> existing [label="yes"];
+  match -> custom [label="no"];
+  existing -> catalog;
+  custom -> pending -> admin;
+  admin -> approve;
+  admin -> merge;
+  admin -> reject;
+  approve -> catalog;
+  merge -> catalog;
+}

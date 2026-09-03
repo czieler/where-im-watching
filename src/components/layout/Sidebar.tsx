@@ -75,6 +75,7 @@ function Sidebar({
         <button
           type="button"
           onClick={() => onSelectPage("list")}
+          aria-current={currentPage === "list" ? "page" : undefined}
           className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${
             currentPage === "list" ? "nav-item-active" : ""
           }`}
@@ -88,6 +89,7 @@ function Sidebar({
         <button
           type="button"
           onClick={() => onSelectPage("services")}
+          aria-current={currentPage === "services" ? "page" : undefined}
           className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "services" ? "nav-item-active" : ""}`}
           title={isCollapsed ? "My Services" : undefined}
         >
@@ -98,6 +100,7 @@ function Sidebar({
         <button
           type="button"
           onClick={() => onSelectPage("roadmap")}
+          aria-current={currentPage === "roadmap" ? "page" : undefined}
           className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "roadmap" ? "nav-item-active" : ""}`}
           title={isCollapsed ? "Coming Soon" : undefined}
         >
@@ -109,6 +112,7 @@ function Sidebar({
           <button
             type="button"
             onClick={() => onSelectPage("admin")}
+          aria-current={currentPage === "admin" ? "page" : undefined}
             className={`nav-item flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium ${currentPage === "admin" ? "nav-item-active" : ""}`}
             title={isCollapsed ? "Admin" : undefined}
           >

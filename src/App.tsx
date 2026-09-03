@@ -226,6 +226,17 @@ function App() {
     return savedTheme ?? "light";
   });
 
+  // Headless UI dialogs render through a portal at the document root.
+  // Mirror the active theme there so modal backdrops/panels inherit the same
+  // CSS custom properties as the main application.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, [theme]);
+
   const [currentPage, setCurrentPage] = useState<Page>("list");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

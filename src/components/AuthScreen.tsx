@@ -146,10 +146,11 @@ function AuthScreen({
         {/* Auth form */}
         <div className="auth-form p-8 md:p-10">
           {!isForgotPassword && (
-            <div className="mb-8 flex border-b">
+            <div className="mb-8 flex border-b" aria-label="Authentication mode">
               <button
                 type="button"
                 onClick={() => changeMode("signIn")}
+                aria-pressed={mode === "signIn"}
                 className={`auth-tab flex-1 pb-3 font-semibold ${
                   mode === "signIn" ? "active" : ""
                 }`}
@@ -160,6 +161,7 @@ function AuthScreen({
               <button
                 type="button"
                 onClick={() => changeMode("signUp")}
+                aria-pressed={mode === "signUp"}
                 className={`auth-tab flex-1 pb-3 font-semibold ${
                   mode === "signUp" ? "active" : ""
                 }`}

@@ -3,6 +3,10 @@ import {
   ComboboxInput,
   ComboboxOption,
   ComboboxOptions,
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
 } from "@headlessui/react";
 import { ChevronDown, ImageOff } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -150,15 +154,20 @@ function AddShowModal({
   const canEditProgress = status === "watching" || status === "onHold";
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center">
-      <form
+    <Dialog open onClose={onClose} className="relative z-50">
+      <DialogBackdrop className="modal-overlay fixed inset-0" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+      <DialogPanel
+        as="form"
         onSubmit={(event) => {
           event.preventDefault();
           void handleSubmit();
         }}
         className="modal max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl p-6 shadow-lg"
       >
-        <h2 className="text-xl font-bold">{show ? "Edit Show" : "Add Show"}</h2>
+        <DialogTitle className="text-xl font-bold">
+          {show ? "Edit Show" : "Add Show"}
+        </DialogTitle>
 
         <div className="mt-6">
           {!show && (
@@ -380,8 +389,9 @@ function AddShowModal({
             {isSaving ? "Saving..." : show ? "Save" : "Add"}
           </button>
         </div>
-      </form>
-    </div>
+      </DialogPanel>
+      </div>
+    </Dialog>
   );
 }
 

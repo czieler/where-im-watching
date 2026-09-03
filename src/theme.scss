@@ -97,6 +97,18 @@
     color: var(--theme-text);
   }
 
+
+  /* Keyboard focus: keep controls obvious without changing mouse/touch styling. */
+  button:focus-visible,
+  a:focus-visible,
+  .app-input:focus-visible,
+  .app-select:focus-visible,
+  .theme-select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid var(--theme-accent);
+    outline-offset: 3px;
+  }
+
   /* ========================================================
      SIDEBAR
      ======================================================== */

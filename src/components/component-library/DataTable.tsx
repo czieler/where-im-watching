@@ -1,11 +1,18 @@
 import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
 
+export type DataTableCellContext = {
+  isExpanded: boolean;
+  toggleExpanded: () => void;
+  rowsExpandable: boolean;
+};
+
 export type DataTableColumn<T> = {
   id: string;
   label: ReactNode;
   width?: CSSProperties["width"];
   align?: "left" | "center" | "right";
-  render: (row: T) => ReactNode;
+  mobileHidden?: boolean;
+  render: (row: T, context: DataTableCellContext) => ReactNode;
 };
 
 type DataTableProps<T> = {
@@ -128,7 +135,7 @@ export function DataTable<T>({
                   {rowsExpandable && (
                     <th
                       className="data-table__expand-heading"
-                      aria-label="Expand row"
+                      aria-label="Row details"
                     />
                   )}
 
@@ -137,7 +144,11 @@ export function DataTable<T>({
                       key={column.id}
                       scope="col"
                       style={{ width: column.width }}
-                      className={`data-table__cell--${column.align ?? "left"}`}
+                      className={[
+                        `data-table__cell--${column.align ?? "left"}`,
+                        `data-table__column--${column.id}`,
+                        column.mobileHidden ? "data-table__column--mobile-hidden" : "",
+                      ].filter(Boolean).join(" ")}
                     >
                       {column.label}
                     </th>
@@ -148,7 +159,7 @@ export function DataTable<T>({
 
             <tbody>
               {rows.length === 0 ? (
-                <tr>
+                <tr className="data-table__empty-row">
                   <td className="data-table__empty" colSpan={totalColumns}>
                     {emptyMessage}
                   </td>
@@ -188,11 +199,17 @@ export function DataTable<T>({
                         {columns.map((column) => (
                           <td
                             key={column.id}
-                            className={`data-table__cell--${
-                              column.align ?? "left"
-                            }`}
+                            className={[
+                              `data-table__cell--${column.align ?? "left"}`,
+                              `data-table__column--${column.id}`,
+                              column.mobileHidden ? "data-table__column--mobile-hidden" : "",
+                            ].filter(Boolean).join(" ")}
                           >
-                            {column.render(row)}
+                            {column.render(row, {
+                              isExpanded,
+                              toggleExpanded: () => toggleRow(rowId),
+                              rowsExpandable,
+                            })}
                           </td>
                         ))}
                       </tr>

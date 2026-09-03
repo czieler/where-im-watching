@@ -27,29 +27,82 @@ function ShowList({
     () => [
       {
         id: "show",
-        label: "Show",
-        width: "42%",
-        render: (show) => (
-          <div className="show-table-title-cell">
-            {show.imageUrl ? (
-              <img
-                src={show.imageUrl}
-                alt=""
-                className="h-12 w-9 shrink-0 rounded object-cover"
-              />
-            ) : (
-              <div className="image-placeholder flex h-12 w-9 shrink-0 items-center justify-center rounded">
-                <ImageOff size={16} />
-              </div>
-            )}
-            <span className="font-semibold">{show.title}</span>
-          </div>
+        label: (
+          <>
+            <span className="show-table-label-desktop">Show</span>
+            <span className="show-table-label-mobile">Show Info</span>
+          </>
         ),
+        width: "42%",
+        render: (show, { isExpanded, toggleExpanded, rowsExpandable }) => {
+          const hasProgress =
+            (status === "watching" || status === "onHold") &&
+            (show.season !== undefined || show.episode !== undefined);
+
+          return (
+            <div className="show-table-mobile-info">
+              <div className="show-table-title-cell">
+                {show.imageUrl ? (
+                  <img
+                    src={show.imageUrl}
+                    alt=""
+                    className="h-12 w-9 shrink-0 rounded object-cover"
+                  />
+                ) : (
+                  <div className="image-placeholder flex h-12 w-9 shrink-0 items-center justify-center rounded">
+                    <ImageOff size={16} />
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{show.title}</span>
+
+                  <div className="show-table-mobile-details">
+                    <span>
+                      <strong>Progress:</strong>{" "}
+                      {hasProgress ? (
+                        <>
+                          {show.season !== undefined && `S${show.season}`}
+                          {show.season !== undefined &&
+                            show.episode !== undefined &&
+                            " "}
+                          {show.episode !== undefined && `E${show.episode}`}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </span>
+                    <span>
+                      <strong>Service:</strong> {show.service}
+                    </span>
+                    <span>
+                      <strong>Profile:</strong>{" "}
+                      {show.streamingProfile?.trim() || "—"}
+                    </span>
+                  </div>
+                </div>
+
+                {rowsExpandable && (
+                  <button
+                    type="button"
+                    className="show-table-mobile-expand themed-icon"
+                    onClick={toggleExpanded}
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? `Hide notes for ${show.title}` : `Show notes for ${show.title}`}
+                  >
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        },
       },
       {
         id: "progress",
         label: "Progress",
         width: "14%",
+        mobileHidden: true,
         render: (show) => {
           if (
             (status !== "watching" && status !== "onHold") ||
@@ -71,6 +124,7 @@ function ShowList({
         id: "service",
         label: "Service",
         width: "18%",
+        mobileHidden: true,
         render: (show) => (
           <span className="text-muted text-sm font-medium">{show.service}</span>
         ),
@@ -79,6 +133,7 @@ function ShowList({
         id: "profile",
         label: "Profile",
         width: "16%",
+        mobileHidden: true,
         render: (show) => (
           <span className="text-muted text-sm font-medium">
             {show.streamingProfile?.trim() || "—"}
