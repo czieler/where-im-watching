@@ -99,3 +99,5 @@ not use the browser-only "Refresh" behavior for App Store updates.
 **Additional TestFlight fix:** the Add Show streaming-service combobox no longer clears its query in the input `blur` handler. Clearing on blur could happen before a clicked dropdown option completed its selection, leaving the typed text visible but preventing the intended option from being recognized. The query is now cleared through the Headless UI Combobox `onClose` lifecycle instead, while the form value remains synchronized with typed text.
 
 **Next release task:** create one new TestFlight build containing the hosted-server Capacitor configuration. After that build is installed, normal web-app releases can be delivered through Render without new TestFlight builds unless native-shell configuration or plugins change.
+
+**Next release task:** build and test these fixes, then adjust the update experience so native iOS builds do not use the browser-only “Refresh” behavior for App Store updates.
