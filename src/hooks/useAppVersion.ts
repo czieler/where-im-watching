@@ -4,6 +4,22 @@ import { supabase } from "../lib/supabaseClient";
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
+function isVersionOlder(current: string, latest: string): boolean {
+  const currentParts = current.split(".").map(Number);
+  const latestParts = latest.split(".").map(Number);
+  const length = Math.max(currentParts.length, latestParts.length);
+
+  for (let i = 0; i < length; i++) {
+    const currentPart = currentParts[i] ?? 0;
+    const latestPart = latestParts[i] ?? 0;
+
+    if (currentPart < latestPart) return true;
+    if (currentPart > latestPart) return false;
+  }
+
+  return false;
+}
+
 export function useAppVersion() {
   const [latestVersion, setLatestVersion] = useState(APP_VERSION);
 
@@ -35,7 +51,7 @@ export function useAppVersion() {
   return {
     currentVersion: APP_VERSION,
     latestVersion,
-    updateAvailable: latestVersion !== APP_VERSION,
+    updateAvailable: isVersionOlder(APP_VERSION, latestVersion),
     refresh: () => window.location.reload(),
   };
 }

@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.czielerworks.whereimwatching',
   appName: "Where I'm Watching",
   webDir: 'dist',
+  server: {
+    url: 'https://wiw.czielerworks.app',
+    cleartext: false,
+  },
   backgroundColor: '#f8fafc',
   ios: {
     backgroundColor: '#f8fafc',
