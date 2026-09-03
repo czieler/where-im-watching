@@ -41,6 +41,18 @@ function PublicPageLayout({ children }: { children: ReactNode }) {
       <footer className="mt-16 border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-slate-500">
           <span>Where I&apos;m Watching · Version {APP_VERSION}</span>
+          <span>
+            Show information and artwork provided by{" "}
+            <a
+              href="https://www.tvmaze.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-teal-700 underline"
+            >
+              TVmaze
+            </a>
+            .
+          </span>
           <span>© 2026 Carole Zieler</span>
         </div>
       </footer>

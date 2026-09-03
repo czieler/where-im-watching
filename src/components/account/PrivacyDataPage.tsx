@@ -204,8 +204,16 @@ function PrivacyDataPage({
                 </p>
 
                 <p className="mt-3">
-                  Show search information is provided by TVmaze. Authentication
-                  emails are delivered through Resend.
+                  Show search information and artwork are provided by{" "}
+                  <a
+                    href="https://www.tvmaze.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold underline"
+                  >
+                    TVmaze
+                  </a>
+                  . Authentication emails are delivered through Resend.
                 </p>
               </div>
             )}
